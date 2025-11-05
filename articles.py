@@ -1,5 +1,8 @@
 # articles.py
 
+import re
+from typing import Optional
+
 articles = [
 
 {'Material': 1000055, 'Description': 'IsoStandard 04 - 04', 'Min_prijs': 27, 'Max_prijs': 35.1, 'Productgroep': 'IsoStandard', 'UC_waarde': 'IsoStandard:  TL 82, g 0.79 Ug=2.7W/m².K (gebaseerd op 5-15L-4)', 'Min_afname': 0.65},
@@ -468,22 +471,13 @@ def to_sml(mm: Optional[int]) -> Optional[str]:
 
 # augment data
 aug = []
-for row in data:
+for row in articles:
     mm = extract_mm(row['Description'])
     sml = to_sml(mm)
     new_row = {**row, 'mm': mm, 'SML': sml}
     aug.append(new_row)
 
 df = pd.DataFrame(aug)
+articles = aug
 
-# Save outputs
-csv_path = '/mnt/data/materials_augmented_mm_sml.csv'
-xlsx_path = '/mnt/data/materials_augmented_mm_sml.xlsx'
-df.to_csv(csv_path, index=False, encoding='utf-8-sig')
-df.to_excel(xlsx_path, index=False)
 
-# Show a preview (first 30 rows)
-from caas_jupyter_tools import display_dataframe_to_user
-display_dataframe_to_user("Augmented materials (preview)", df.head(30))
-
-(csv_path, xlsx_path, len(df), df['mm'].isna().sum())
