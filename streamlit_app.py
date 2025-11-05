@@ -201,7 +201,7 @@ with st.sidebar:
         if SF_USERNAME and SF_PASSWORD and SF_SECURITY_TOKEN:
             session_id, instance = SalesforceLogin(
                 username=SF_USERNAME,
-                password=f"{SF_PASSWORD}{SF_SECURITY_TOKEN}",  # zelfde concatenatie als je andere app
+                password=f"{SF_PASSWORD}{SF_SECURITY_TOKEN}",
                 domain=SF_DOMAIN
             )
             sf = Salesforce(instance=instance, session_id=session_id)
@@ -212,8 +212,7 @@ with st.sidebar:
                     .drop(columns="attributes", errors="ignore")
                     .rename(columns={"Name": "Klantnaam", "ERP_Number__c": "Klantnummer"})
                 )
-            
-                # ✅ Alleen doorgaan als 'Klantnummer' in de DataFrame zit
+    
                 if "Klantnummer" in accounts_df.columns:
                     accounts_df["Klantnummer"] = accounts_df["Klantnummer"].astype(str)
                     accounts_df["Omzet klant (€)"] = accounts_df["Klantnummer"].apply(bepaal_omzet)
@@ -221,6 +220,8 @@ with st.sidebar:
                     accounts_df["Klantinfo"] = accounts_df["Klantnummer"] + " - " + accounts_df["Klantnaam"]
                 else:
                     st.warning("Geen geldige klantnummers gevonden in Salesforce-data.")
+    except Exception as e:
+        st.warning(f"Fout bij het verbinden met Salesforce: {e}")
     
     # UI: kies klant (Salesforce → klantnummer), anders fallback
     if not accounts_df.empty:
