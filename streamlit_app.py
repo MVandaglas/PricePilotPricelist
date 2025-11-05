@@ -371,12 +371,12 @@ if selected == "Prijslijst":
     # Final prijs
     def final_price_row(r):
         hp = r.get("Handmatige prijs", None)
-        return round(float(hp), 2) if pd.notna(hp) and hp != "" else r["RSP"]
+        return round(float(hp), 2) if pd.notna(hp) and hp != "" else r["Huidige m2 prijs"]
     df["Final prijs"] = df.apply(final_price_row, axis=1)
 
     # Prijskwaliteit = (Final prijs / RSP) * 100, afgerond op hele getallen
     df["Prijskwaliteit (%)"] = df.apply(
-        lambda r: round((r["RSP"] / r["Final prijs"]) * 100) if r.get("RSP") not in (0, None) else None,
+        lambda r: round((r["Final prijs"] / r["RSP"]) * 100) if r.get("RSP") not in (0, None) else None,
         axis=1
     )
 
