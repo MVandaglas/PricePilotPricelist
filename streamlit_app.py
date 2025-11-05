@@ -89,6 +89,30 @@ def bepaal_klantgrootte(omzet: float) -> str:
     else:
         return "D"
 
+# Defaults
+ALWAYS_ON = {
+    "IsoPerform Alfa (HR++)",
+    "IsoPerform Eclaz Zen (HR++)",
+    "IsoPerform SS Zero (HR++)",
+    "TriplePerform 74/54 (HR++)",
+}
+DEFAULT_UPLIFTS = {
+    "IP SolarControl Sun (ZHR++)": 6,
+    "IsoPerform SS Zero (HR++)": 12,
+    "SolarControl SKN 154 (ZHR++)": 25,
+    "SolarControl SKN165 (ZHR++)": 25,
+    "IsoPerform Eclaz Zen (HR++)": 6,
+    "IP Energy 72/38 (ZHR++)": 6,
+    # overige niet genoemde productgroepen krijgen 30
+}
+
+# Init session state
+if "pg_show" not in st.session_state:
+    st.session_state.pg_show = {pg: ("ja" if pg in ALWAYS_ON else "nee") for pg in alle_pg}
+
+if "pg_uplift" not in st.session_state:
+    st.session_state.pg_uplift = {pg: float(DEFAULT_UPLIFTS.get(pg, 30)) for pg in alle_pg}
+
 def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
     """Zeer eenvoudige PDF-export (optioneel). Vereist reportlab."""
     try:
