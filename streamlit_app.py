@@ -409,7 +409,7 @@ if selected == "Prijslijst":
 
     
     
-    df["Effect aanpassing"] = (df["Omzet totaal"] - df["Omzet conditie"]).round(2)
+
 
     # Tabel tonen (selectief editable)
     show_cols = [
