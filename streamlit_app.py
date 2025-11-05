@@ -140,8 +140,8 @@ with st.sidebar:
         orientation="vertical",
     )
 
-st.markdown("---")
-st.caption("Selecties")
+    st.markdown("---")
+    st.caption("Selecties")
 
     # Klantselectie (placeholder → later Salesforce)
     klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
@@ -200,8 +200,8 @@ per_mm_uplift = st.number_input(
 # dict met opslag per productgroep voor RSP-berekening
 per_pg_uplift = dict(st.session_state.pg_uplift)
 
-    st.markdown("---")
-    export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
+st.markdown("---")
+export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
 # ---------------------------
 # Pagina: Prijslijst
