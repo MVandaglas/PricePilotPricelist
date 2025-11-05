@@ -189,12 +189,12 @@ with st.sidebar:
     st.caption("Prijsparameters")
     base_price_alfa = st.number_input(
         "Basismateriaal (IsoPerform ALFA 04 - #04)",
-        min_value=0.0, value=30.0, step=0.1,
+        min_value=0.0, value=32.0, step=0.1,
         help="Startpunt voor RSP; Alfa heeft geen coatingtoeslag"
     )
     per_mm_uplift = st.number_input(
         "Opslag per mm (€/mm)",
-        min_value=0.0, value=0.40, step=0.05
+        min_value=0.0, value=2.50, step=0.05
     )
     
     # dict met opslag per productgroep voor RSP-berekening
