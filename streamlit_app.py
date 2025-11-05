@@ -147,22 +147,22 @@ with st.sidebar:
     klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
     klant = st.selectbox("Klantnummer", klant_opts, index=0)
 
-# --- Productgroepen + S/M/L + coating-opslag in expander ---
-alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
-
-# init state voor keuzes per productgroep
-if "pg_show" not in st.session_state:
-    st.session_state.pg_show = {pg: "ja" for pg in alle_pg}  # "ja" / "nee"
-if "pg_uplift" not in st.session_state:
-    st.session_state.pg_uplift = {pg: 0.0 for pg in alle_pg}  # €/m²
-
-with st.expander("Productgroepen & coating-toeslagen", expanded=False):
-    st.caption("Zet per productgroep aan/uit en geef een opslag in €/m² op.")
-    # kopregel
-    header_cols = st.columns([4, 2, 3])
-    header_cols[0].markdown("**Productgroep**")
-    header_cols[1].markdown("**Tonen?**")
-    header_cols[2].markdown("**Opslag coating (€/m²)**")
+    # --- Productgroepen + S/M/L + coating-opslag in expander ---
+    alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
+    
+    # init state voor keuzes per productgroep
+    if "pg_show" not in st.session_state:
+        st.session_state.pg_show = {pg: "ja" for pg in alle_pg}  # "ja" / "nee"
+    if "pg_uplift" not in st.session_state:
+        st.session_state.pg_uplift = {pg: 0.0 for pg in alle_pg}  # €/m²
+    
+    with st.expander("Productgroepen & coating-toeslagen", expanded=False):
+        st.caption("Zet per productgroep aan/uit en geef een opslag in €/m² op.")
+        # kopregel
+        header_cols = st.columns([4, 2, 3])
+        header_cols[0].markdown("**Productgroep**")
+        header_cols[1].markdown("**Tonen?**")
+        header_cols[2].markdown("**Opslag coating (€/m²)**")
 
     for pg in alle_pg:
         c1, c2, c3 = st.columns([4, 2, 3])
