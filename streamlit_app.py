@@ -168,13 +168,11 @@ with st.sidebar:
         c1, c2, c3 = st.columns([4, 2, 3])
         c1.write(pg)
         st.session_state.pg_show[pg] = c2.selectbox(
-            label=f"Tonen {pg}",
             options=["ja", "nee"],
             index=0 if st.session_state.pg_show.get(pg, "ja") == "ja" else 1,
             key=f"pg_show_{pg}",
         )
         st.session_state.pg_uplift[pg] = c3.number_input(
-            label=f"Opslag {pg}",
             value=float(st.session_state.pg_uplift.get(pg, 0.0)),
             step=0.1,
             key=f"pg_uplift_{pg}",
