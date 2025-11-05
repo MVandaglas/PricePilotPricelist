@@ -376,7 +376,7 @@ if selected == "Prijslijst":
 
     # Prijskwaliteit = (Final prijs / RSP) * 100, afgerond op hele getallen
     df["Prijskwaliteit (%)"] = df.apply(
-        lambda r: round((r["Final prijs"] / r["RSP"]) * 100) if r.get("RSP") not in (0, None) else None,
+        lambda r: round((r["RSP"] / r["Final prijs"]) * 100) if r.get("RSP") not in (0, None) else None,
         axis=1
     )
 
