@@ -13,7 +13,7 @@ st.set_page_config(page_icon="🎯", page_title="PricePilot", layout="wide")
 # ---------------------------
 @st.cache_data(show_spinner=False)
 def load_articles_df() -> pd.DataFrame:
-    from articles import articles  # laadt ALLE artikelen uit jouw articles.py
+    from articles.py import articles  # laadt ALLE artikelen uit jouw articles.py
     df = pd.DataFrame(articles)
     # Normaliseer kolomnamen indien nodig
     if "Material" not in df.columns or "Description" not in df.columns:
