@@ -212,9 +212,15 @@ with st.sidebar:
                     .drop(columns="attributes", errors="ignore")
                     .rename(columns={"Name": "Klantnaam", "ERP_Number__c": "Klantnummer"})
                 )
-                accounts_df["Klantinfo"] = accounts_df["Klantnummer"] + " - " + accounts_df["Klantnaam"]
-    except Exception as e:
-        st.warning(f"Fout bij het verbinden met Salesforce: {e}")
+            
+                # ✅ Alleen doorgaan als 'Klantnummer' in de DataFrame zit
+                if "Klantnummer" in accounts_df.columns:
+                    accounts_df["Klantnummer"] = accounts_df["Klantnummer"].astype(str)
+                    accounts_df["Omzet klant (€)"] = accounts_df["Klantnummer"].apply(bepaal_omzet)
+                    accounts_df["Klantgrootte"] = accounts_df["Omzet klant (€)"].apply(bepaal_klantgrootte)
+                    accounts_df["Klantinfo"] = accounts_df["Klantnummer"] + " - " + accounts_df["Klantnaam"]
+                else:
+                    st.warning("Geen geldige klantnummers gevonden in Salesforce-data.")
     
     # UI: kies klant (Salesforce → klantnummer), anders fallback
     if not accounts_df.empty:
