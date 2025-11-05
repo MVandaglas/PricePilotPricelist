@@ -1,283 +1,340 @@
-import os
-import io
-import pandas as pd
 import streamlit as st
+import pandas as pd
+from io import BytesIO
 from streamlit_option_menu import option_menu
 
-st.set_page_config(
-    page_title="BullsAI • Materials",
-    page_icon="🧊",
-    layout="wide",
-)
+# ---------------------------
+# Config
+# ---------------------------
+st.set_page_config(page_icon="🎯", page_title="PricePilot", layout="wide")
 
-DATA_PATH_DEFAULT = "materials_augmented_mm_sml.csv"
-SESSION_KEY = "materials_df"
-
-# -------------------------------
-# Helpers
-# -------------------------------
-
+# ---------------------------
+# Data laden
+# ---------------------------
 @st.cache_data(show_spinner=False)
-def load_csv(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path, dtype={"Material": "Int64"}, sep=",")
-    return normalize_df(df)
-
-def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
-    # Zorg voor robuuste kolommen en types
-    rename_map = {
-        "material": "Material",
-        "description": "Description",
-        "min_prijs": "Min_prijs",
-        "max_prijs": "Max_prijs",
-        "productgroep": "Productgroep",
-        "uc_waarde": "UC_waarde",
-        "min_afname": "Min_afname",
-    }
-    df = df.rename(columns=rename_map)
-
-    # Ensure columns exist
-    for col in ["Material", "Description", "Min_prijs", "Max_prijs", "Productgroep",
-                "UC_waarde", "Min_afname", "mm", "SML"]:
-        if col not in df.columns:
-            df[col] = pd.NA
-
-    # Types
-    for col in ["Min_prijs", "Max_prijs", "Min_afname", "mm"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    if "Material" in df.columns:
-        df["Material"] = pd.to_numeric(df["Material"], errors="coerce").astype("Int64")
-
-    # SML naar categorie volgorde
-    if "SML" in df.columns:
-        df["SML"] = df["SML"].astype("string")
-        df["SML"] = pd.Categorical(df["SML"], categories=["S", "M", "L"], ordered=True)
-
-    # Opschonen strings
-    for col in ["Description", "Productgroep", "UC_waarde"]:
-        df[col] = df[col].astype("string")
-
+def load_articles_df() -> pd.DataFrame:
+    from articles import articles  # laadt ALLE artikelen uit jouw articles.py
+    df = pd.DataFrame(articles)
+    # Normaliseer kolomnamen indien nodig
+    if "Material" not in df.columns or "Description" not in df.columns:
+        raise ValueError("articles.py mist verplichte velden: Material, Description")
+    # Zorg voor types
+    df["Material"] = pd.to_numeric(df["Material"], errors="coerce").astype("Int64")
+    if "mm" in df.columns:
+        df["mm"] = pd.to_numeric(df["mm"], errors="coerce").fillna(0.0)
+    else:
+        df["mm"] = 0.0
+    if "SML" not in df.columns:
+        df["SML"] = "L"
     return df
 
-def save_to_excel_bytes(df: pd.DataFrame) -> bytes:
-    buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="Materials")
-    buf.seek(0)
-    return buf.read()
+@st.cache_data(show_spinner=False)
+def load_sap_prices() -> dict:
+    try:
+        from SAPprijs import sap_prices
+        return sap_prices
+    except Exception:
+        # Fallback als SAPprijs.py (nog) niet aanwezig is
+        return {
+            "100007": {},  # lege mapping; kan later gevuld worden
+        }
 
-def quick_text_filter(df: pd.DataFrame, q: str) -> pd.DataFrame:
-    if not q:
-        return df
-    q = q.strip().lower()
-    mask = (
-        df["Description"].fillna("").str.lower().str.contains(q)
-        | df["Productgroep"].fillna("").str.lower().str.contains(q)
-        | df["UC_waarde"].fillna("").str.lower().str.contains(q)
-        | df["Material"].astype("string").str.contains(q)
-    )
-    return df[mask]
+# ---------------------------
+# Helper functies
+# ---------------------------
+def sml_filter(df: pd.DataFrame, pick: str) -> pd.DataFrame:
+    if pick == "S":
+        return df[df["SML"] == "S"]
+    elif pick == "M":
+        return df[df["SML"].isin(["S", "M"])]
+    return df  # L = alles
 
-def apply_advanced_filters(
-    df: pd.DataFrame,
-    productgroepen: list,
-    sml_sel: list,
-    mm_range: tuple,
-    minprijs_range: tuple,
-    maxprijs_range: tuple,
-) -> pd.DataFrame:
-    out = df.copy()
-    if productgroepen:
-        out = out[out["Productgroep"].isin(productgroepen)]
-    if sml_sel:
-        out = out[out["SML"].astype("string").isin([str(x) for x in sml_sel])]
-    if mm_range:
-        lo, hi = mm_range
-        out = out[(out["mm"].isna()) | ((out["mm"] >= lo) & (out["mm"] <= hi))]
-    if minprijs_range:
-        lo, hi = minprijs_range
-        out = out[(out["Min_prijs"].isna()) | ((out["Min_prijs"] >= lo) & (out["Min_prijs"] <= hi))]
-    if maxprijs_range:
-        lo, hi = maxprijs_range
-        out = out[(out["Max_prijs"].isna()) | ((out["Max_prijs"] >= lo) & (out["Max_prijs"] <= hi))]
-    return out
+def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
+    pg = row.get("Productgroep", "")
+    mm = float(row.get("mm", 0.0) or 0.0)
+    pg_uplift = float(per_pg_uplift.get(pg, 0.0) or 0.0)
+    return float(base_price_alfa) + pg_uplift + (mm * float(per_mm_uplift))
 
-# -------------------------------
-# Data in session state laden
-# -------------------------------
+def prijs_kwaliteit(final_price, min_p, max_p) -> str:
+    try:
+        if pd.isna(final_price):
+            return ""
+        if pd.notna(min_p) and final_price < float(min_p):
+            return "Onder min"
+        if pd.notna(max_p) and final_price > float(max_p):
+            return "Boven max"
+        return "Binnen band"
+    except Exception:
+        return ""
 
-def ensure_data_in_session():
-    if SESSION_KEY in st.session_state and isinstance(st.session_state[SESSION_KEY], pd.DataFrame):
-        return
-    if os.path.exists(DATA_PATH_DEFAULT):
-        st.session_state[SESSION_KEY] = load_csv(DATA_PATH_DEFAULT)
-    else:
-        st.session_state[SESSION_KEY] = normalize_df(pd.DataFrame([]))
+def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
+    """Zeer eenvoudige PDF-export (optioneel). Vereist reportlab."""
+    try:
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.units import cm
 
-ensure_data_in_session()
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=landscape(A4))
+        width, height = landscape(A4)
 
-# -------------------------------
-# Sidebar: option menu
-# -------------------------------
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(2*cm, height - 1.5*cm, title)
 
+        cols = ["Material","Description","Productgroep","mm","Huidige m2 prijs","RSP","Handmatige prijs","Final prijs","Verwachte m2","Omzet conditie","Omzet totaal","Effect aanpassing"]
+        show_df = df.reindex(columns=[c for c in cols if c in df.columns]).copy()
+
+        x0, y0 = 1.2*cm, height - 3*cm
+        line_h = 0.6*cm
+        col_widths = [3*cm, 6.2*cm, 3.2*cm, 1.6*cm, 3*cm, 2.4*cm, 3*cm, 2.6*cm, 2.6*cm, 3*cm, 3*cm, 3*cm]
+
+        def draw_row(y, values, bold=False):
+            c.setFont("Helvetica-Bold" if bold else "Helvetica", 8)
+            x = x0
+            for v, w in zip(values, col_widths):
+                c.drawString(x, y, str(v))
+                x += w
+
+        # Header
+        draw_row(y0, cols[:len(col_widths)], bold=True)
+        y = y0 - line_h
+
+        for _, row in show_df.iterrows():
+            vals = [row.get(col, "") for col in cols]
+            draw_row(y, vals[:len(col_widths)], bold=False)
+            y -= line_h
+            if y < 2*cm:
+                c.showPage()
+                c.setFont("Helvetica-Bold", 14)
+                c.drawString(2*cm, height - 1.5*cm, title)
+                draw_row(y0, cols[:len(col_widths)], bold=True)
+                y = y0 - line_h
+
+        c.save()
+        buffer.seek(0)
+        return buffer.read()
+    except Exception:
+        return b""
+
+# ---------------------------
+# Session init
+# ---------------------------
+if "articles_df" not in st.session_state:
+    st.session_state.articles_df = load_articles_df()
+if "sap_prices" not in st.session_state:
+    st.session_state.sap_prices = load_sap_prices()
+
+df_all = st.session_state.articles_df.copy()
+sap_prices_all = st.session_state.sap_prices
+
+# ---------------------------
+# Sidebar navigatie (option_menu)
+# ---------------------------
 with st.sidebar:
+    st.markdown("### 🎯 PricePilot")
     selected = option_menu(
-        "BullsAI • Materials",
-        [
-            "Overzicht",
-            "Filter & zoek",
-            "Statistiek",
-            "Import / Export",
-            "Info",
-        ],
-        icons=["table", "funnel", "bar-chart", "upload", "info-circle"],
-        menu_icon="boxes",
+        menu_title=None,
+        options=["Prijslijst", "Beheer"],
+        icons=["list-ul", "tools"],
         default_index=0,
         orientation="vertical",
     )
 
-# -------------------------------
-# Pagina's
-# -------------------------------
+    st.markdown("---")
+    st.caption("Selecties")
 
-df = st.session_state[SESSION_KEY]
+    # Klantselectie (placeholder → later Salesforce)
+    klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
+    klant = st.selectbox("Klantnummer", klant_opts, index=0)
 
-if selected == "Overzicht":
-    st.title("Alle materialen")
-    st.caption("Toont **alle** records uit de dataset (geen demo-subset).")
-    c1, c2, c3 = st.columns([2, 1, 1])
-    with c1:
-        q = st.text_input("Snel zoeken (materiaal, omschrijving, productgroep…)", placeholder="Typ om te filteren…")
-    with c2:
-        sort_col = st.selectbox("Sorteer op", ["Material", "Description", "Productgroep", "mm", "Min_prijs", "Max_prijs"], index=0)
-    with c3:
-        asc = st.toggle("Oplopend", value=True)
+    # Productgroepen selecteren
+    alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
+    sel_pg = st.multiselect("Productgroepen", alle_pg, default=alle_pg[:1] if alle_pg else [])
 
-    view = quick_text_filter(df, q)
-    if sort_col in view.columns:
-        view = view.sort_values(by=sort_col, ascending=asc, kind="mergesort")
+    # S/M/L
+    sml_pick = st.radio("S/M/L lijst", ["S", "M", "L"], horizontal=True,
+                        help="S = hardlopers, M = S+M, L = alle artikelen")
 
-    st.write(f"**{len(view):,}** materialen gevonden.")
-    st.dataframe(view, use_container_width=True, height=560)
+    st.markdown("---")
+    st.caption("Prijsparameters")
+    base_price_alfa = st.number_input(
+        "Basismateriaal (IsoPerform ALFA 04 - #04)",
+        min_value=0.0, value=30.0, step=0.1,
+        help="Startpunt voor RSP; Alfa heeft geen coatingtoeslag"
+    )
+    per_mm_uplift = st.number_input(
+        "Opslag per mm (€/mm)",
+        min_value=0.0, value=0.40, step=0.05
+    )
+    st.markdown("**Opslag per productgroep (€/m²)**")
+    per_pg_uplift = {}
+    for pg in sel_pg:
+        per_pg_uplift[pg] = st.number_input(f"Toeslag {pg}", value=0.0, step=0.1, key=f"uplift_{pg}")
 
-elif selected == "Filter & zoek":
-    st.title("Filter & zoek")
-    st.caption("Combineer filters voor een gerichte selectie.")
+    st.markdown("---")
+    export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
-    with st.expander("Filters", expanded=True):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            productgroepen = sorted([x for x in df["Productgroep"].dropna().unique().tolist()])
-            pg_sel = st.multiselect("Productgroep", productgroepen)
-            sml_sel = st.multiselect("SML (S≤6, M7–10, L≥11)", options=["S", "M", "L"])
-        with col2:
-            mm_min = int(pd.to_numeric(df["mm"], errors="coerce").min(skipna=True) or 0)
-            mm_max = int(pd.to_numeric(df["mm"], errors="coerce").max(skipna=True) or 50)
-            mm_range = st.slider("Totale dikte (mm)", min_value=mm_min, max_value=mm_max, value=(mm_min, mm_max))
-            min_min = float(pd.to_numeric(df["Min_prijs"], errors="coerce").min(skipna=True) or 0.0)
-            min_max = float(pd.to_numeric(df["Min_prijs"], errors="coerce").max(skipna=True) or 0.0)
-            minprijs_range = st.slider("Min_prijs", min_value=float(round(min_min, 2)), max_value=float(round(min_max, 2)),
-                                       value=(float(round(min_min, 2)), float(round(min_max, 2))))
-        with col3:
-            max_min = float(pd.to_numeric(df["Max_prijs"], errors="coerce").min(skipna=True) or 0.0)
-            max_max = float(pd.to_numeric(df["Max_prijs"], errors="coerce").max(skipna=True) or 0.0)
-            maxprijs_range = st.slider("Max_prijs", min_value=float(round(max_min, 2)), max_value=float(round(max_max, 2)),
-                                       value=(float(round(max_min, 2)), float(round(max_max, 2))))
-    q2 = st.text_input("Vrije tekst zoekterm (material/omschrijving/UC_waarde)", placeholder="Bijv. SKN165 of 44.2")
+# ---------------------------
+# Pagina: Prijslijst
+# ---------------------------
+if selected == "Prijslijst":
+    st.title("📄 Prijslijst")
 
-    filtered = apply_advanced_filters(df, pg_sel, sml_sel, mm_range, minprijs_range, maxprijs_range)
-    filtered = quick_text_filter(filtered, q2)
+    # Filter op productgroep + S/M/L
+    df = df_all.copy()
+    if sel_pg:
+        df = df[df["Productgroep"].isin(sel_pg)]
+    df = sml_filter(df, sml_pick).copy()
 
-    st.write(f"Resultaat: **{len(filtered):,}** materialen")
-    st.dataframe(filtered, use_container_width=True, height=560)
+    # Basis kolommen
+    df["Material"] = df["Material"].astype("Int64")
+    df["Artikelnummer"] = df["Material"].astype(str)
+    df["Artikelnaam"] = df["Description"]
+    if "mm" not in df.columns:
+        df["mm"] = 0.0
+    df["mm"] = pd.to_numeric(df["mm"], errors="coerce").fillna(0.0)
 
-    st.download_button("📥 Download selectie (CSV)", data=filtered.to_csv(index=False).encode("utf-8"),
-                       file_name="materials_filtered.csv", mime="text/csv")
+    # Huidige m2 prijs (SAP)
+    sap_for_client = sap_prices_all.get(klant, {})
+    def map_sap_price(artnr: str):
+        # SAP dict keys vaak als strings
+        return sap_for_client.get(str(artnr), None)
+    df["Huidige m2 prijs"] = df["Artikelnummer"].map(map_sap_price)
 
-elif selected == "Statistiek":
-    st.title("Statistiek")
-    st.caption("Snelle inzichten per productgroep.")
+    # RSP
+    df["RSP"] = df.apply(lambda r: round(compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift), 2), axis=1)
 
-    if df.empty:
-        st.info("Geen data geladen.")
-    else:
-        grp = (
-            df.groupby("Productgroep", dropna=False)
-              .agg(
-                  Aantal=("Material", "count"),
-                  Gem_mm=("mm", "mean"),
-                  Gem_MinPrijs=("Min_prijs", "mean"),
-                  Gem_MaxPrijs=("Max_prijs", "mean"),
-              )
-              .reset_index()
-              .sort_values("Aantal", ascending=False)
-        )
-        st.dataframe(grp, use_container_width=True, height=480)
+    # Handmatige prijs + Verwachte m2 (editable)
+    if "Handmatige prijs" not in df.columns:
+        df["Handmatige prijs"] = None
+    if "Verwachte m2" not in df.columns:
+        df["Verwachte m2"] = 0.0
 
-        st.subheader("Aantal per productgroep")
-        st.bar_chart(grp.set_index("Productgroep")["Aantal"])
+    # Final prijs
+    def final_price_row(r):
+        hp = r.get("Handmatige prijs", None)
+        return round(float(hp), 2) if pd.notna(hp) and hp != "" else r["RSP"]
+    df["Final prijs"] = df.apply(final_price_row, axis=1)
 
-        st.subheader("Gemiddelde mm per productgroep")
-        st.bar_chart(grp.set_index("Productgroep")["Gem_mm"])
-
-elif selected == "Import / Export":
-    st.title("Import / Export")
-    st.caption("Laad nieuwe data of exporteer de huidige tabel.")
-
-    st.markdown("**Importeer** CSV of Excel met de verwachte kolommen.")
-    up = st.file_uploader("Kies bestand", type=["csv", "xlsx"], accept_multiple_files=False)
-    if up is not None:
-        try:
-            if up.name.lower().endswith(".csv"):
-                new_df = pd.read_csv(up, dtype={"Material": "Int64"})
-            else:
-                new_df = pd.read_excel(up, dtype={"Material": "Int64"})
-            new_df = normalize_df(new_df)
-            st.session_state[SESSION_KEY] = new_df
-            st.success(f"Ingeladen: {len(new_df):,} regels.")
-        except Exception as e:
-            st.error(f"Kon bestand niet verwerken: {e}")
-
-    st.divider()
-    st.markdown("**Export** huidige dataset:")
-    cur = st.session_state[SESSION_KEY]
-    c1, c2 = st.columns(2)
-    with c1:
-        st.download_button(
-            "📥 Download alles (CSV)",
-            data=cur.to_csv(index=False).encode("utf-8"),
-            file_name="materials_full.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
-    with c2:
-        st.download_button(
-            "📥 Download alles (Excel)",
-            data=save_to_excel_bytes(cur),
-            file_name="materials_full.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-        )
-
-elif selected == "Info":
-    st.title("Info")
-    st.markdown(
-        """
-        **BullsAI • Materials**
-        - Linker **option-menu** voor navigatie
-        - **Overzicht**: alle materialen + snelle zoekbalk
-        - **Filter & zoek**: productgroep/SML/mm/prijs en vrije tekst
-        - **Statistiek**: aantallen en gemiddelden per productgroep
-        - **Import / Export**: upload CSV/XLSX of exporteer actuele set
-
-        **SML-definitie**  
-        - **S**: mm ≤ 6  
-        - **M**: 7 ≤ mm ≤ 10  
-        - **L**: mm ≥ 11  
-        """
+    # Prijskwaliteit binnen bandbreedtes
+    df["Prijskwaliteit"] = df.apply(
+        lambda r: prijs_kwaliteit(
+            r["Final prijs"],
+            r.get("Min_prijs", None),
+            r.get("Max_prijs", None)
+        ),
+        axis=1
     )
 
-# Footer subtiel
-st.markdown(
-    "<div style='text-align: right; color: #888; font-size: 12px;'>BullsAI • Materials</div>",
-    unsafe_allow_html=True,
-)
+    # Omzetberekening
+    df["Omzet conditie"] = (
+        pd.to_numeric(df["Huidige m2 prijs"], errors="coerce").fillna(0) *
+        pd.to_numeric(df["Verwachte m2"], errors="coerce").fillna(0)
+    ).round(2)
+    df["Omzet totaal"] = (
+        pd.to_numeric(df["Final prijs"], errors="coerce").fillna(0) *
+        pd.to_numeric(df["Verwachte m2"], errors="coerce").fillna(0)
+    ).round(2)
+    df["Effect aanpassing"] = (df["Omzet totaal"] - df["Omzet conditie"]).round(2)
+
+    # Tabel tonen (selectief editable)
+    show_cols = [
+        "Artikelnummer","Artikelnaam","Productgroep","mm",
+        "Huidige m2 prijs","RSP","Handmatige prijs","Final prijs",
+        "Verwachte m2","Prijskwaliteit","Omzet conditie","Omzet totaal","Effect aanpassing"
+    ]
+    display_df = df.reindex(columns=show_cols).copy()
+
+    edited = st.data_editor(
+        display_df,
+        use_container_width=True,
+        num_rows="dynamic",
+        column_config={
+            "Artikelnummer": st.column_config.TextColumn(disabled=True),
+            "Artikelnaam": st.column_config.TextColumn(disabled=True),
+            "Productgroep": st.column_config.TextColumn(disabled=True),
+            "mm": st.column_config.NumberColumn(disabled=True),
+            "Huidige m2 prijs": st.column_config.NumberColumn(disabled=True),
+            "RSP": st.column_config.NumberColumn(disabled=True),
+            "Handmatige prijs": st.column_config.NumberColumn(help="Laat leeg om RSP te gebruiken"),
+            "Final prijs": st.column_config.NumberColumn(disabled=True),
+            "Verwachte m2": st.column_config.NumberColumn(help="Gebruik voor omzetberekening"),
+            "Prijskwaliteit": st.column_config.TextColumn(disabled=True),
+            "Omzet conditie": st.column_config.NumberColumn(disabled=True),
+            "Omzet totaal": st.column_config.NumberColumn(disabled=True),
+            "Effect aanpassing": st.column_config.NumberColumn(disabled=True),
+        },
+        key="prijs_editor",
+    )
+
+    # Herberekenen op basis van editor
+    edited["Final prijs"] = edited.apply(
+        lambda r: round(float(r["Handmatige prijs"]), 2) if pd.notna(r["Handmatige prijs"]) and r["Handmatige prijs"] != "" else r["RSP"],
+        axis=1
+    )
+    edited["Omzet conditie"] = (
+        pd.to_numeric(edited["Huidige m2 prijs"], errors="coerce").fillna(0) *
+        pd.to_numeric(edited["Verwachte m2"], errors="coerce").fillna(0)
+    ).round(2)
+    edited["Omzet totaal"] = (
+        pd.to_numeric(edited["Final prijs"], errors="coerce").fillna(0) *
+        pd.to_numeric(edited["Verwachte m2"], errors="coerce").fillna(0)
+    ).round(2)
+    edited["Effect aanpassing"] = (edited["Omzet totaal"] - edited["Omzet conditie"]).round(2)
+
+    st.caption(f"Regels: {len(edited)}")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        csv_bytes = edited.to_csv(index=False).encode("utf-8")
+        st.download_button("⬇️ Download CSV", data=csv_bytes, file_name=f"{export_name}.csv", mime="text/csv")
+    with c2:
+        pdf_bytes = df_to_simple_pdf(edited, title=f"Prijslijst klant {klant}")
+        if pdf_bytes:
+            st.download_button("⬇️ Download PDF", data=pdf_bytes, file_name=f"{export_name}.pdf", mime="application/pdf")
+        else:
+            st.info("PDF-export vereist `reportlab` → `pip install reportlab`")
+
+# ---------------------------
+# Pagina: Beheer
+# ---------------------------
+elif selected == "Beheer":
+    st.title("🛠️ Beheer – artikelen")
+
+    beheer_cols = ["Material","Description","Productgroep","mm","Min_prijs","Max_prijs","SML","UC_waarde","Min_afname"]
+    base = df_all.reindex(columns=[c for c in beheer_cols if c in df_all.columns]).copy()
+
+    beheer_edit = st.data_editor(
+        base,
+        use_container_width=True,
+        column_config={
+            "Material": st.column_config.NumberColumn(disabled=True),
+            "Description": st.column_config.TextColumn(disabled=True),
+            "Productgroep": st.column_config.TextColumn(disabled=True),
+            "mm": st.column_config.NumberColumn(disabled=True),
+            "Min_prijs": st.column_config.NumberColumn(help="Ondergrens per m²"),
+            "Max_prijs": st.column_config.NumberColumn(help="Bovengrens per m²"),
+            "SML": st.column_config.SelectboxColumn(options=["S","M","L"], help="S=hardloper, M=mid, L=volledige lijst"),
+            "UC_waarde": st.column_config.TextColumn(disabled=True) if "UC_waarde" in base.columns else None,
+            "Min_afname": st.column_config.NumberColumn(disabled=True) if "Min_afname" in base.columns else None,
+        },
+        key="beheer_editor",
+    )
+
+    st.caption("Alleen Min_prijs, Max_prijs en SML zijn bewerkbaar. Overige velden zijn vergrendeld.")
+    c1, c2, c3 = st.columns([1,1,2])
+    with c1:
+        if st.button("💾 Wijzigingen opslaan (session)"):
+            full = st.session_state.articles_df.set_index("Material")
+            upd = beheer_edit.set_index("Material")
+            for col in ["Min_prijs","Max_prijs","SML"]:
+                if col in upd.columns and col in full.columns:
+                    full.loc[upd.index, col] = upd[col]
+            st.session_state.articles_df = full.reset_index()
+            st.success("Wijzigingen opgeslagen in geheugen.")
+    with c2:
+        export_articles_csv = st.session_state.articles_df.to_csv(index=False).encode("utf-8")
+        st.download_button("⬇️ Exporteer CSV", data=export_articles_csv, file_name="articles_updated.csv", mime="text/csv")
+    with c3:
+        export_articles_json = st.session_state.articles_df.to_json(orient="records", force_ascii=False).encode("utf-8")
+        st.download_button("⬇️ Exporteer JSON", data=export_articles_json, file_name="articles_updated.json", mime="application/json")
