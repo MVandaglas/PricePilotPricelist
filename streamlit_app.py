@@ -374,11 +374,12 @@ if selected == "Prijslijst":
         return round(float(hp), 2) if pd.notna(hp) and hp != "" else r["RSP"]
     df["Final prijs"] = df.apply(final_price_row, axis=1)
 
-    # Prijskwaliteit = Final prijs / RSP (per regel)
-    df["Prijskwaliteit"] = df.apply(
-        lambda r: round(r["Final prijs"] / r["RSP"], 2) if r.get("RSP") not in (0, None) else None,
+    # Prijskwaliteit = (Final prijs / RSP) * 100, afgerond op hele getallen
+    df["Prijskwaliteit (%)"] = df.apply(
+        lambda r: round((r["Final prijs"] / r["RSP"]) * 100) if r.get("RSP") not in (0, None) else None,
         axis=1
     )
+
 
     # Omzetberekening
     df["Omzet conditie"] = (
