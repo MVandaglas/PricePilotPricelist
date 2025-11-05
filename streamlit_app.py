@@ -455,9 +455,7 @@ if selected == "Prijslijst":
         lambda r: round(float(r["Handmatige prijs"]), 2) if pd.notna(r["Handmatige prijs"]) and r["Handmatige prijs"] != "" else r["RSP"],
         axis=1
     )
-    edited["Omzet totaal"] = (
-        pd.to_numeric(edited["Final prijs"], errors="coerce").fillna(0) *
-    edited["Effect aanpassing"] = (edited["Omzet totaal"] - edited["Omzet conditie"]).round(2))
+
 
     st.caption(f"Regels: {len(edited)}")
 
