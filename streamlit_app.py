@@ -459,7 +459,7 @@ if selected == "Prijslijst":
         pd.to_numeric(edited["Huidige m2 prijs"], errors="coerce").fillna(0) *
     edited["Omzet totaal"] = (
         pd.to_numeric(edited["Final prijs"], errors="coerce").fillna(0) *
-    edited["Effect aanpassing"] = (edited["Omzet totaal"] - edited["Omzet conditie"]).round(2)
+    edited["Effect aanpassing"] = (edited["Omzet totaal"] - edited["Omzet conditie"]).round(2))
 
     st.caption(f"Regels: {len(edited)}")
 
