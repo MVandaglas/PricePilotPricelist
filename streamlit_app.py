@@ -140,8 +140,8 @@ with st.sidebar:
         orientation="vertical",
     )
 
-        st.markdown("---")
-        st.caption("Selecties")
+st.markdown("---")
+st.caption("Selecties")
 
     # Klantselectie (placeholder → later Salesforce)
     klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
