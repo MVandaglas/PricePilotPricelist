@@ -1,7 +1,5 @@
 # articles.py
 
-import re
-from typing import Optional
 
 articles = [
 
@@ -419,65 +417,74 @@ articles = [
 
 ]
 
-# helper to compute lamination tokens like '33.1', '44.4', '66.2' -> sum first two digits
+import re
+from typing import Optional
+import pandas as pd
+
+# --- Hulpfuncties voor mm- en SML-afleiding ---
 def lamination_token_to_mm(token: str) -> Optional[int]:
+    """Zet tokens zoals '33.1' om naar mm (3+3=6)."""
     m = re.fullmatch(r'(\d{2})\.(\d)', token)
-    if not m: 
+    if not m:
         return None
     digits = m.group(1)
     return int(digits[0]) + int(digits[1])
 
+
 def extract_mm(desc: str) -> Optional[int]:
+    """Berekent de totale dikte (mm) uit een artikelomschrijving."""
     mm_total = 0
     found = False
-    
-    # 1) tokens like '4mm', '7mm', '12mm'
+
+    # 1) Tokens als '4mm', '10mm'
     for m in re.finditer(r'(\d{1,2})mm', desc, flags=re.IGNORECASE):
         mm_total += int(m.group(1))
         found = True
-    
-    # 2) lamination tokens like '33.1', '44.2', '55.4', etc.
+
+    # 2) Laminatievormen zoals '33.1', '44.2'
     for m in re.finditer(r'(\d{2})\.(\d)', desc):
         digits = m.group(1)
         mm_total += int(digits[0]) + int(digits[1])
         found = True
-    
-    # 3) parenthesis like '(10,3)' -> take integer part before comma
+
+    # 3) Waarden tussen haakjes zoals '(10,3)' → 10
     for m in re.finditer(r'\((\d{1,2}),\d\)', desc):
         mm_total += int(m.group(1))
         found = True
-    
-    # 4) pane tokens like ' 04', '#04', '- 04', etc. (whitelisted values)
-    allowed = {'03':3,'04':4,'05':5,'06':6,'08':8,'10':10,'12':12,'15':15,'19':19}
+
+    # 4) Paneelcodes zoals ' 04', '#05', '- 06'
+    allowed = {'03': 3, '04': 4, '05': 5, '06': 6, '08': 8,
+               '10': 10, '12': 12, '15': 15, '19': 19}
     for m in re.finditer(r'(?:(?:^|[ #\-]))(0?\d{1,2})(?=(?:$|[ #\-\+]))', desc):
-        t = m.group(1)
-        t2 = t.zfill(2)
-        if t2 in allowed:
-            mm_total += allowed[t2]
+        token = m.group(1).zfill(2)
+        if token in allowed:
+            mm_total += allowed[token]
             found = True
-    
-    if not found:
-        return None
-    return mm_total
+
+    return mm_total if found else None
+
 
 def to_sml(mm: Optional[int]) -> Optional[str]:
+    """Classificeert mm-waarde in S / M / L."""
     if mm is None:
         return None
     if mm <= 6:
-        return 'S'
-    if 7 <= mm <= 10:
-        return 'M'
-    return 'L'
+        return "S"
+    elif 7 <= mm <= 10:
+        return "M"
+    return "L"
 
-# augment data
-aug = []
+
+# --- Data verrijken met mm en SML ---
+augmented_articles = []
 for row in articles:
-    mm = extract_mm(row['Description'])
+    mm = extract_mm(row.get("Description", ""))
     sml = to_sml(mm)
-    new_row = {**row, 'mm': mm, 'SML': sml}
-    aug.append(new_row)
+    new_row = {**row, "mm": mm, "SML": sml}
+    augmented_articles.append(new_row)
 
-df = pd.DataFrame(aug)
-articles = aug
+articles = augmented_articles  # overschrijf originele lijst
 
+# optioneel: DataFrame beschikbaar stellen (geen file output!)
+df = pd.DataFrame(articles)
 
