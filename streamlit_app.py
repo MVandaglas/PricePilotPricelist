@@ -180,28 +180,28 @@ with st.sidebar:
             key=f"pg_uplift_{pg}",
         )
 
-# resultaatvariabelen voor gebruik in de rest van de app (ongewijzigde namen)
-sel_pg = [pg for pg, v in st.session_state.pg_show.items() if v == "ja"]
-sml_pick = st.radio("S/M/L lijst", ["S", "M", "L"], horizontal=True,
-                    help="S = hardlopers, M = S+M, L = alle artikelen")
-
-st.markdown("---")
-st.caption("Prijsparameters")
-base_price_alfa = st.number_input(
-    "Basismateriaal (IsoPerform ALFA 04 - #04)",
-    min_value=0.0, value=30.0, step=0.1,
-    help="Startpunt voor RSP; Alfa heeft geen coatingtoeslag"
-)
-per_mm_uplift = st.number_input(
-    "Opslag per mm (€/mm)",
-    min_value=0.0, value=0.40, step=0.05
-)
-
-# dict met opslag per productgroep voor RSP-berekening
-per_pg_uplift = dict(st.session_state.pg_uplift)
-
-st.markdown("---")
-export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
+    # resultaatvariabelen voor gebruik in de rest van de app (ongewijzigde namen)
+    sel_pg = [pg for pg, v in st.session_state.pg_show.items() if v == "ja"]
+    sml_pick = st.radio("S/M/L lijst", ["S", "M", "L"], horizontal=True,
+                        help="S = hardlopers, M = S+M, L = alle artikelen")
+    
+    st.markdown("---")
+    st.caption("Prijsparameters")
+    base_price_alfa = st.number_input(
+        "Basismateriaal (IsoPerform ALFA 04 - #04)",
+        min_value=0.0, value=30.0, step=0.1,
+        help="Startpunt voor RSP; Alfa heeft geen coatingtoeslag"
+    )
+    per_mm_uplift = st.number_input(
+        "Opslag per mm (€/mm)",
+        min_value=0.0, value=0.40, step=0.05
+    )
+    
+    # dict met opslag per productgroep voor RSP-berekening
+    per_pg_uplift = dict(st.session_state.pg_uplift)
+    
+    st.markdown("---")
+    export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
 # ---------------------------
 # Pagina: Prijslijst
