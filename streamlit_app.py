@@ -290,7 +290,7 @@ with st.sidebar:
     )
     gelaagd_component = st.number_input(
         "Opslag per gelaagd component",
-        min_value=0.0, value=20, step=0.5
+        min_value=0.0, value=20.0, step=0.5
     )
     
     # dict met opslag per productgroep voor RSP-berekening
