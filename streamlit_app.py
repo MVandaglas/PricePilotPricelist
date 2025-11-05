@@ -175,6 +175,8 @@ with st.sidebar:
     SF_PASSWORD = os.getenv("SALESFORCE_PASSWORD")
     SF_SECURITY_TOKEN = os.getenv("SF_SECURITY_TOKEN")
     SF_DOMAIN = "test"  # 'test' = Sandbox
+
+    accounts_df = pd.DataFrame(columns=["Klantnaam", "Klantnummer", "Klantinfo", "Omzet klant (€)", "Klantgrootte"])
     
     def fetch_salesforce_accounts_direct(sf_connection):
         try:
