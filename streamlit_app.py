@@ -105,6 +105,7 @@ DEFAULT_UPLIFTS = {
     "SolarControl SKN165 (ZHR++)": 25,
     "IsoPerform Eclaz Zen (HR++)": 6,
     "IP Energy 72/38 (ZHR++)": 6,
+    "IsoPerform ALFA (HR++)": 0,
     # overige niet genoemde productgroepen krijgen 30
 }
 
