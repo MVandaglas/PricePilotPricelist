@@ -395,8 +395,15 @@ if selected == "Prijslijst":
     # Final prijs
     def final_price_row(r):
         hp = r.get("Handmatige prijs", None)
-        return round(float(hp), 2) if pd.notna(hp) and hp != "" else r["RSP"]
+        if pd.notna(hp) and hp != "":
+            return round(float(hp), 2)
+        huidige = r.get("Huidige m2 prijs", None)
+        if pd.notna(huidige) and huidige not in ("", 0, None):
+            return round(float(huidige), 2)
+        return round(float(r.get("RSP", 0) or 0), 2)
+    
     df["Final prijs"] = df.apply(final_price_row, axis=1)
+
 
     # Prijskwaliteit = (Final prijs / RSP) * 100, afgerond op hele getallen
     final_vals = pd.to_numeric(df["Final prijs"], errors="coerce")
