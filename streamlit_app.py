@@ -407,17 +407,7 @@ if selected == "Prijslijst":
                          np.nan)
     df["Prijskwaliteit (%)"] = np.round(ratio_pct)
 
-
-    # Omzetberekening
-    df["Omzet conditie"] = (
-        pd.to_numeric(df["Huidige m2 prijs"], errors="coerce").fillna(0)
-        * pd.to_numeric(df["Verwachte m2"], errors="coerce").fillna(0)
-    ).round(2)
     
-    df["Omzet totaal"] = (
-        pd.to_numeric(df["Final prijs"], errors="coerce").fillna(0)
-        * pd.to_numeric(df["Verwachte m2"], errors="coerce").fillna(0)
-    ).round(2)
     
     df["Effect aanpassing"] = (df["Omzet totaal"] - df["Omzet conditie"]).round(2)
 
