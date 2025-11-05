@@ -147,29 +147,58 @@ with st.sidebar:
     klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
     klant = st.selectbox("Klantnummer", klant_opts, index=0)
 
-    # Productgroepen selecteren
-    alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
-    sel_pg = st.multiselect("Productgroepen", alle_pg, default=alle_pg[:1] if alle_pg else [])
+# --- Productgroepen + S/M/L + coating-opslag in expander ---
+alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
 
-    # S/M/L
-    sml_pick = st.radio("S/M/L lijst", ["S", "M", "L"], horizontal=True,
-                        help="S = hardlopers, M = S+M, L = alle artikelen")
+# init state voor keuzes per productgroep
+if "pg_show" not in st.session_state:
+    st.session_state.pg_show = {pg: "ja" for pg in alle_pg}  # "ja" / "nee"
+if "pg_uplift" not in st.session_state:
+    st.session_state.pg_uplift = {pg: 0.0 for pg in alle_pg}  # €/m²
 
-    st.markdown("---")
-    st.caption("Prijsparameters")
-    base_price_alfa = st.number_input(
-        "Basismateriaal (IsoPerform ALFA 04 - #04)",
-        min_value=0.0, value=30.0, step=0.1,
-        help="Startpunt voor RSP; Alfa heeft geen coatingtoeslag"
-    )
-    per_mm_uplift = st.number_input(
-        "Opslag per mm (€/mm)",
-        min_value=0.0, value=0.40, step=0.05
-    )
-    st.markdown("**Opslag per productgroep (€/m²)**")
-    per_pg_uplift = {}
-    for pg in sel_pg:
-        per_pg_uplift[pg] = st.number_input(f"Toeslag {pg}", value=0.0, step=0.1, key=f"uplift_{pg}")
+with st.expander("Productgroepen & coating-toeslagen", expanded=False):
+    st.caption("Zet per productgroep aan/uit en geef een opslag in €/m² op.")
+    # kopregel
+    header_cols = st.columns([4, 2, 3])
+    header_cols[0].markdown("**Productgroep**")
+    header_cols[1].markdown("**Tonen?**")
+    header_cols[2].markdown("**Opslag coating (€/m²)**")
+
+    for pg in alle_pg:
+        c1, c2, c3 = st.columns([4, 2, 3])
+        c1.write(pg)
+        st.session_state.pg_show[pg] = c2.selectbox(
+            label=f"Tonen {pg}",
+            options=["ja", "nee"],
+            index=0 if st.session_state.pg_show.get(pg, "ja") == "ja" else 1,
+            key=f"pg_show_{pg}",
+        )
+        st.session_state.pg_uplift[pg] = c3.number_input(
+            label=f"Opslag {pg}",
+            value=float(st.session_state.pg_uplift.get(pg, 0.0)),
+            step=0.1,
+            key=f"pg_uplift_{pg}",
+        )
+
+# resultaatvariabelen voor gebruik in de rest van de app (ongewijzigde namen)
+sel_pg = [pg for pg, v in st.session_state.pg_show.items() if v == "ja"]
+sml_pick = st.radio("S/M/L lijst", ["S", "M", "L"], horizontal=True,
+                    help="S = hardlopers, M = S+M, L = alle artikelen")
+
+st.markdown("---")
+st.caption("Prijsparameters")
+base_price_alfa = st.number_input(
+    "Basismateriaal (IsoPerform ALFA 04 - #04)",
+    min_value=0.0, value=30.0, step=0.1,
+    help="Startpunt voor RSP; Alfa heeft geen coatingtoeslag"
+)
+per_mm_uplift = st.number_input(
+    "Opslag per mm (€/mm)",
+    min_value=0.0, value=0.40, step=0.05
+)
+
+# dict met opslag per productgroep voor RSP-berekening
+per_pg_uplift = dict(st.session_state.pg_uplift)
 
     st.markdown("---")
     export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
