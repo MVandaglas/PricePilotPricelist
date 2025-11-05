@@ -221,8 +221,11 @@ with st.sidebar:
         klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
         klant = st.selectbox("Klantnummer (fallback)", klant_opts, index=0)
 
-    accounts_df["Omzet klant (€)"] = accounts_df["Klantnummer"].astype(str).apply(bepaal_omzet)
-    accounts_df["Klantgrootte"] = accounts_df["Omzet klant (€)"].apply(bepaal_klantgrootte)
+    if not accounts_df.empty:
+        gekozen_klant = accounts_df.loc[accounts_df["Klantnummer"] == klant].iloc[0]
+        col1, col2 = st.columns(2)
+        col1.metric("💶 Omzet klant", f"€ {gekozen_klant['Omzet klant (€)']:,.0f}".replace(",", "."))
+        col2.metric("🏷️ Klantgrootte", gekozen_klant["Klantgrootte"])
 
     # --- Productgroepen + S/M/L + coating-opslag in expander ---
     alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
