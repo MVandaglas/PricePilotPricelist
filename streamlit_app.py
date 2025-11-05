@@ -286,8 +286,16 @@ with st.sidebar:
             st.session_state.pg_show[pg] = c2.selectbox(
                 label="",
                 options=["ja", "nee"],
-                index=0 if st.session_state.pg_show.get(pg, "ja") == "ja" else 1,
+                index=0 if st.session_state.pg_show.get(pg, "nee") == "ja" else 1,
                 key=f"pg_show_{pg}",
+            )
+            
+            # ⬇️ Toon en update de opslag per productgroep
+            st.session_state.pg_uplift[pg] = c3.number_input(
+                label="",
+                value=float(st.session_state.pg_uplift.get(pg, 30.0)),
+                step=0.5,  # pas aan naar wens (0.1/0.5/1.0)
+                key=f"pg_uplift_{pg}",
             )
             DEFAULT_UPLIFTS = {
                 "IP SolarControl Sun (ZHR++)": 6,
