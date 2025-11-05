@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 from streamlit_option_menu import option_menu
+import numpy as np
 
 # ---------------------------
 # Config
