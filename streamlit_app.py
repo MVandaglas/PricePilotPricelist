@@ -67,6 +67,28 @@ def prijs_kwaliteit(final_price, min_p, max_p) -> str:
     except Exception:
         return ""
 
+def bepaal_omzet(klantnummer: str) -> float:
+    if klantnummer.startswith("10"):
+        return 76000
+    elif klantnummer.startswith("11"):
+        return 200000
+    elif klantnummer.startswith("12"):
+        return 300000
+    elif klantnummer.startswith(("13", "14", "15", "16")):
+        return 700000
+    else:
+        return 50000  # default bij onbekende prefix
+
+def bepaal_klantgrootte(omzet: float) -> str:
+    if omzet > 500000:
+        return "A"
+    elif omzet > 250000:
+        return "B"
+    elif omzet > 100000:
+        return "C"
+    else:
+        return "D"
+
 def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
     """Zeer eenvoudige PDF-export (optioneel). Vereist reportlab."""
     try:
@@ -198,6 +220,9 @@ with st.sidebar:
     else:
         klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
         klant = st.selectbox("Klantnummer (fallback)", klant_opts, index=0)
+
+    accounts_df["Omzet klant (€)"] = accounts_df["Klantnummer"].astype(str).apply(bepaal_omzet)
+    accounts_df["Klantgrootte"] = accounts_df["Omzet klant (€)"].apply(bepaal_klantgrootte)
 
     # --- Productgroepen + S/M/L + coating-opslag in expander ---
     alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
