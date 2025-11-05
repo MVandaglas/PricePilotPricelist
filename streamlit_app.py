@@ -413,7 +413,7 @@ if selected == "Prijslijst":
         pd.to_numeric(df["Huidige m2 prijs"], errors="coerce").fillna(0) *
     df["Omzet totaal"] = (
         pd.to_numeric(df["Final prijs"], errors="coerce").fillna(0) *
-    df["Effect aanpassing"] = (df["Omzet totaal"] - df["Omzet conditie"]).round(2)
+    df["Effect aanpassing"] = (df["Omzet totaal"] - df["Omzet conditie"]).round(2))
 
     # Tabel tonen (selectief editable)
     show_cols = [
