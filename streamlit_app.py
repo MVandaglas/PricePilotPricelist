@@ -239,14 +239,38 @@ with st.sidebar:
         col1.metric("💶 Omzet klant", f"€ {gekozen_klant['Omzet klant (€)']:,.0f}".replace(",", "."))
         col2.metric("🏷️ Klantgrootte", gekozen_klant["Klantgrootte"])
 
+    # Klantgrootte ophalen voor de geselecteerde klant
+    klantgrootte = None
+    if 'accounts_df' in locals() and not accounts_df.empty:
+        sel = accounts_df.loc[accounts_df["Klantnummer"] == str(klant)]
+        if not sel.empty:
+            klantgrootte = sel["Klantgrootte"].iloc[0]
+    
+    # Defaults per klantgrootte
+    BASE_PRICE_BY_SIZE = {"A": 30, "B": 32, "C": 34, "D": 37}
+    PER_MM_BY_SIZE     = {"A": 2.00, "B": 2.50, "C": 2.50, "D": 2.75}
+    
+    base_default = float(BASE_PRICE_BY_SIZE.get(klantgrootte, 30))
+    permm_default = float(PER_MM_BY_SIZE.get(klantgrootte, 2.50))
+
+
     # --- Productgroepen + S/M/L + coating-opslag in expander ---
     alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
     
     # init state voor keuzes per productgroep
+    ALWAYS_ON = {
+        "IsoPerform Alfa (HR++)",
+        "IsoPerform Eclaz Zen (HR++)",
+        "IsoPerform SS Zero (HR++)",
+        "TriplePerform 74/54 (HR++)",
+    }
+    
     if "pg_show" not in st.session_state:
-        st.session_state.pg_show = {pg: "ja" for pg in alle_pg}  # "ja" / "nee"
-    if "pg_uplift" not in st.session_state:
-        st.session_state.pg_uplift = {pg: 0.0 for pg in alle_pg}  # €/m²
+        st.session_state.pg_show = {
+            pg: ("ja" if pg in ALWAYS_ON else "nee") 
+            for pg in alle_pg
+        }
+
     
     with st.expander("Productgroepen & coating-toeslagen", expanded=False):
         st.caption("Zet per productgroep aan/uit en geef een opslag in €/m² op.")
@@ -265,12 +289,21 @@ with st.sidebar:
                 index=0 if st.session_state.pg_show.get(pg, "ja") == "ja" else 1,
                 key=f"pg_show_{pg}",
             )
-            st.session_state.pg_uplift[pg] = c3.number_input(
-                label="",
-                value=float(st.session_state.pg_uplift.get(pg, 0.0)),
-                step=0.1,
-                key=f"pg_uplift_{pg}",
-            )
+            DEFAULT_UPLIFTS = {
+                "IP SolarControl Sun (ZHR++)": 6,
+                "IsoPerform SS Zero (HR++)": 12,
+                "SolarControl SKN 154 (ZHR++)": 25,
+                "SolarControl SKN165 (ZHR++)": 25,
+                "IsoPerform Eclaz Zen (HR++)": 6,
+                "IP Energy 72/38 (ZHR++)": 6,
+                # overige niet genoemde productgroepen krijgen 30
+            }
+            
+            if "pg_uplift" not in st.session_state:
+                st.session_state.pg_uplift = {
+                    pg: float(DEFAULT_UPLIFTS.get(pg, 30)) 
+                    for pg in alle_pg
+                }
 
     # resultaatvariabelen voor gebruik in de rest van de app (ongewijzigde namen)
     sel_pg = [pg for pg, v in st.session_state.pg_show.items() if v == "ja"]
@@ -281,12 +314,12 @@ with st.sidebar:
     st.caption("Prijsparameters")
     base_price_alfa = st.number_input(
         "Basismateriaal (IsoPerform ALFA 04 - #04)",
-        min_value=0.0, value=32.0, step=0.1,
+        min_value=0.0, value=base_default, step=0.1,
         help="Startpunt voor RSP; Alfa heeft geen coatingtoeslag"
     )
     per_mm_uplift = st.number_input(
         "Opslag per mm (€/mm)",
-        min_value=0.0, value=2.50, step=0.05
+        min_value=0.0, value=permm_default, step=0.05
     )
     gelaagd_component = st.number_input(
         "Opslag per gelaagd component",
