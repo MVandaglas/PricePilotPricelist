@@ -416,28 +416,74 @@ articles = [
 
 ]
 
-import re, random
+# helper to compute lamination tokens like '33.1', '44.4', '66.2' -> sum first two digits
+def lamination_token_to_mm(token: str) -> Optional[int]:
+    m = re.fullmatch(r'(\d{2})\.(\d)', token)
+    if not m: 
+        return None
+    digits = m.group(1)
+    return int(digits[0]) + int(digits[1])
 
-def bereken_mm(description: str) -> int:
-    # vind alle patronen als 33.1, 44.2, 6, 8, 10, etc.
-    delen = re.findall(r"\d+(?:\.\d+)?", description)
-    totaal = 0
-    for deel in delen:
-        # bijv. '33.1' -> 3 + 3
-        if '.' in deel:
-            nummers = deel.split('.')[0]  # '33'
-            totaal += sum(int(x) for x in nummers)
-        else:
-            totaal += int(deel)
-    return totaal
+def extract_mm(desc: str) -> Optional[int]:
+    mm_total = 0
+    found = False
+    
+    # 1) tokens like '4mm', '7mm', '12mm'
+    for m in re.finditer(r'(\d{1,2})mm', desc, flags=re.IGNORECASE):
+        mm_total += int(m.group(1))
+        found = True
+    
+    # 2) lamination tokens like '33.1', '44.2', '55.4', etc.
+    for m in re.finditer(r'(\d{2})\.(\d)', desc):
+        digits = m.group(1)
+        mm_total += int(digits[0]) + int(digits[1])
+        found = True
+    
+    # 3) parenthesis like '(10,3)' -> take integer part before comma
+    for m in re.finditer(r'\((\d{1,2}),\d\)', desc):
+        mm_total += int(m.group(1))
+        found = True
+    
+    # 4) pane tokens like ' 04', '#04', '- 04', etc. (whitelisted values)
+    allowed = {'03':3,'04':4,'05':5,'06':6,'08':8,'10':10,'12':12,'15':15,'19':19}
+    for m in re.finditer(r'(?:(?:^|[ #\-]))(0?\d{1,2})(?=(?:$|[ #\-\+]))', desc):
+        t = m.group(1)
+        t2 = t.zfill(2)
+        if t2 in allowed:
+            mm_total += allowed[t2]
+            found = True
+    
+    if not found:
+        return None
+    return mm_total
 
-for art in articles:
-    desc = art.get('Description', '')
-    art['mm'] = bereken_mm(desc)
-    art['SML'] = random.choice(['S', 'M', 'L'])
+def to_sml(mm: Optional[int]) -> Optional[str]:
+    if mm is None:
+        return None
+    if mm <= 6:
+        return 'S'
+    if 7 <= mm <= 10:
+        return 'M'
+    return 'L'
 
-# Opslaan als Pandas DataFrame
-import pandas as pd
+# augment data
+aug = []
+for row in data:
+    mm = extract_mm(row['Description'])
+    sml = to_sml(mm)
+    new_row = {**row, 'mm': mm, 'SML': sml}
+    aug.append(new_row)
 
-article_table = pd.DataFrame(articles)
+df = pd.DataFrame(aug)
 
+# Save outputs
+csv_path = '/mnt/data/materials_augmented_mm_sml.csv'
+xlsx_path = '/mnt/data/materials_augmented_mm_sml.xlsx'
+df.to_csv(csv_path, index=False, encoding='utf-8-sig')
+df.to_excel(xlsx_path, index=False)
+
+# Show a preview (first 30 rows)
+from caas_jupyter_tools import display_dataframe_to_user
+display_dataframe_to_user("Augmented materials (preview)", df.head(30))
+
+(csv_path, xlsx_path, len(df), df['mm'].isna().sum())
