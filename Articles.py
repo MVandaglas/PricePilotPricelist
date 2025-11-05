@@ -416,7 +416,28 @@ articles = [
 
 ]
 
+import re, random
+
+def bereken_mm(description: str) -> int:
+    # vind alle patronen als 33.1, 44.2, 6, 8, 10, etc.
+    delen = re.findall(r"\d+(?:\.\d+)?", description)
+    totaal = 0
+    for deel in delen:
+        # bijv. '33.1' -> 3 + 3
+        if '.' in deel:
+            nummers = deel.split('.')[0]  # '33'
+            totaal += sum(int(x) for x in nummers)
+        else:
+            totaal += int(deel)
+    return totaal
+
+for art in articles:
+    desc = art.get('Description', '')
+    art['mm'] = bereken_mm(desc)
+    art['SML'] = random.choice(['S', 'M', 'L'])
+
 # Opslaan als Pandas DataFrame
 import pandas as pd
 
 article_table = pd.DataFrame(articles)
+
