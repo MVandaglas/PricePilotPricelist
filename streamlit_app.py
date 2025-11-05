@@ -124,7 +124,7 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
         c.setFont("Helvetica-Bold", 14)
         c.drawString(2*cm, height - 1.5*cm, title)
 
-        cols = ["Material","Description","Productgroep","mm","Huidige m2 prijs","RSP","Handmatige prijs","Final prijs","Verwachte m2","Omzet conditie","Omzet totaal","Effect aanpassing"]
+        cols = ["Material","Description","Productgroep","mm","Huidige m2 prijs","RSP","Handmatige prijs","Final prijs","Omzet conditie","Omzet totaal","Effect aanpassing"]
         show_df = df.reindex(columns=[c for c in cols if c in df.columns]).copy()
 
         x0, y0 = 1.2*cm, height - 3*cm
@@ -387,11 +387,10 @@ if selected == "Prijslijst":
     # RSP
     df["RSP"] = df.apply(lambda r: round(compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift), 2), axis=1)
 
-    # Handmatige prijs + Verwachte m2 (editable)
+    # Handmatige prijs (editable)
     if "Handmatige prijs" not in df.columns:
         df["Handmatige prijs"] = None
-    if "Verwachte m2" not in df.columns:
-        df["Verwachte m2"] = 0.0
+
 
     # Final prijs
     def final_price_row(r):
@@ -412,19 +411,15 @@ if selected == "Prijslijst":
     # Omzetberekening
     df["Omzet conditie"] = (
         pd.to_numeric(df["Huidige m2 prijs"], errors="coerce").fillna(0) *
-        pd.to_numeric(df["Verwachte m2"], errors="coerce").fillna(0)
-    ).round(2)
     df["Omzet totaal"] = (
         pd.to_numeric(df["Final prijs"], errors="coerce").fillna(0) *
-        pd.to_numeric(df["Verwachte m2"], errors="coerce").fillna(0)
-    ).round(2)
     df["Effect aanpassing"] = (df["Omzet totaal"] - df["Omzet conditie"]).round(2)
 
     # Tabel tonen (selectief editable)
     show_cols = [
         "Artikelnummer","Artikelnaam","Productgroep","mm",
         "Huidige m2 prijs","RSP","Handmatige prijs","Final prijs",
-        "Verwachte m2","Prijskwaliteit","Omzet conditie","Omzet totaal","Effect aanpassing"
+        "Prijskwaliteit","Omzet conditie","Omzet totaal","Effect aanpassing"
     ]
     display_df = df.reindex(columns=show_cols).copy()
 
@@ -441,7 +436,6 @@ if selected == "Prijslijst":
             "RSP": st.column_config.NumberColumn(disabled=True),
             "Handmatige prijs": st.column_config.NumberColumn(help="Laat leeg om RSP te gebruiken"),
             "Final prijs": st.column_config.NumberColumn(disabled=True),
-            "Verwachte m2": st.column_config.NumberColumn(help="Gebruik voor omzetberekening"),
             "Prijskwaliteit": st.column_config.TextColumn(disabled=True),
             "Omzet conditie": st.column_config.NumberColumn(disabled=True),
             "Omzet totaal": st.column_config.NumberColumn(disabled=True),
@@ -457,12 +451,8 @@ if selected == "Prijslijst":
     )
     edited["Omzet conditie"] = (
         pd.to_numeric(edited["Huidige m2 prijs"], errors="coerce").fillna(0) *
-        pd.to_numeric(edited["Verwachte m2"], errors="coerce").fillna(0)
-    ).round(2)
     edited["Omzet totaal"] = (
         pd.to_numeric(edited["Final prijs"], errors="coerce").fillna(0) *
-        pd.to_numeric(edited["Verwachte m2"], errors="coerce").fillna(0)
-    ).round(2)
     edited["Effect aanpassing"] = (edited["Omzet totaal"] - edited["Omzet conditie"]).round(2)
 
     st.caption(f"Regels: {len(edited)}")
