@@ -53,7 +53,7 @@ def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift:
     pg = row.get("Productgroep", "")
     mm = float(row.get("mm", 0.0) or 0.0)
     pg_uplift = float(per_pg_uplift.get(pg, 0.0) or 0.0)
-    return float(base_price_alfa) + pg_uplift + (mm * float(per_mm_uplift))
+    return float(base_price_alfa) + pg_uplift + ((mm -8) * float(per_mm_uplift))
 
 def prijs_kwaliteit(final_price, min_p, max_p) -> str:
     try:
