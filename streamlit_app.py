@@ -164,21 +164,21 @@ with st.sidebar:
         header_cols[1].markdown("**Tonen?**")
         header_cols[2].markdown("**Opslag coating (€/m²)**")
 
-    for pg in alle_pg:
-        c1, c2, c3 = st.columns([4, 2, 3])
-        c1.write(pg)
-        st.session_state.pg_show[pg] = c2.selectbox(
-            label="",
-            options=["ja", "nee"],
-            index=0 if st.session_state.pg_show.get(pg, "ja") == "ja" else 1,
-            key=f"pg_show_{pg}",
-        )
-        st.session_state.pg_uplift[pg] = c3.number_input(
-            label="",
-            value=float(st.session_state.pg_uplift.get(pg, 0.0)),
-            step=0.1,
-            key=f"pg_uplift_{pg}",
-        )
+        for pg in alle_pg:
+            c1, c2, c3 = st.columns([4, 2, 3])
+            c1.write(pg)
+            st.session_state.pg_show[pg] = c2.selectbox(
+                label="",
+                options=["ja", "nee"],
+                index=0 if st.session_state.pg_show.get(pg, "ja") == "ja" else 1,
+                key=f"pg_show_{pg}",
+            )
+            st.session_state.pg_uplift[pg] = c3.number_input(
+                label="",
+                value=float(st.session_state.pg_uplift.get(pg, 0.0)),
+                step=0.1,
+                key=f"pg_uplift_{pg}",
+            )
 
     # resultaatvariabelen voor gebruik in de rest van de app (ongewijzigde namen)
     sel_pg = [pg for pg, v in st.session_state.pg_show.items() if v == "ja"]
