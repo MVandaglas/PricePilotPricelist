@@ -190,7 +190,10 @@ with st.sidebar:
             st.warning(f"Fout bij ophalen van Salesforce-accounts: {e}")
             return []
     
-    accounts_df = pd.DataFrame(columns=["Klantnaam", "Klantnummer", "Klantinfo"])
+    accounts_df["Klantnummer"] = accounts_df["Klantnummer"].astype(str)  # eerst naar string
+    accounts_df["Omzet klant (€)"] = accounts_df["Klantnummer"].apply(bepaal_omzet)
+    accounts_df["Klantgrootte"] = accounts_df["Omzet klant (€)"].apply(bepaal_klantgrootte)
+    accounts_df["Klantinfo"] = accounts_df["Klantnummer"] + " - " + accounts_df["Klantnaam"]
     
     # Verbind met Salesforce
     sf = None
