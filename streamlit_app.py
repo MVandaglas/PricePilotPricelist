@@ -142,10 +142,62 @@ with st.sidebar:
 
     st.markdown("---")
     st.caption("Selecties")
-
-    # Klantselectie (placeholder → later Salesforce)
-    klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
-    klant = st.selectbox("Klantnummer", klant_opts, index=0)
+    
+    # Klantselectie via Salesforce (fallback = sap_prices_all)
+    from simple_salesforce import Salesforce, SalesforceLogin
+    import os
+    import pandas as pd
+    
+    # SF login (zelfde patroon als je andere app)
+    SF_USERNAME = os.getenv("SALESFORCE_USERNAME")
+    SF_PASSWORD = os.getenv("SALESFORCE_PASSWORD")
+    SF_SECURITY_TOKEN = os.getenv("SF_SECURITY_TOKEN")
+    SF_DOMAIN = "test"  # 'test' = Sandbox
+    
+    def fetch_salesforce_accounts_direct(sf_connection):
+        try:
+            res = sf_connection.query("""
+                SELECT Id, Name, ERP_Number__c
+                FROM Account
+                WHERE ERP_Number__c != NULL AND Is_Active__c = TRUE
+                ORDER BY ERP_Number__c ASC
+                LIMIT 7000
+            """)
+            return res["records"]
+        except Exception as e:
+            st.warning(f"Fout bij ophalen van Salesforce-accounts: {e}")
+            return []
+    
+    accounts_df = pd.DataFrame(columns=["Klantnaam", "Klantnummer", "Klantinfo"])
+    
+    # Verbind met Salesforce
+    sf = None
+    try:
+        if SF_USERNAME and SF_PASSWORD and SF_SECURITY_TOKEN:
+            session_id, instance = SalesforceLogin(
+                username=SF_USERNAME,
+                password=f"{SF_PASSWORD}{SF_SECURITY_TOKEN}",  # zelfde concatenatie als je andere app
+                domain=SF_DOMAIN
+            )
+            sf = Salesforce(instance=instance, session_id=session_id)
+            records = fetch_salesforce_accounts_direct(sf)
+            if records:
+                accounts_df = (
+                    pd.DataFrame(records)
+                    .drop(columns="attributes", errors="ignore")
+                    .rename(columns={"Name": "Klantnaam", "ERP_Number__c": "Klantnummer"})
+                )
+                accounts_df["Klantinfo"] = accounts_df["Klantnummer"] + " - " + accounts_df["Klantnaam"]
+    except Exception as e:
+        st.warning(f"Fout bij het verbinden met Salesforce: {e}")
+    
+    # UI: kies klant (Salesforce → klantnummer), anders fallback
+    if not accounts_df.empty:
+        gekozen_info = st.selectbox("Klant", accounts_df["Klantinfo"].tolist(), index=0)
+        klant = accounts_df.loc[accounts_df["Klantinfo"] == gekozen_info, "Klantnummer"].iloc[0]
+    else:
+        klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
+        klant = st.selectbox("Klantnummer (fallback)", klant_opts, index=0)
 
     # --- Productgroepen + S/M/L + coating-opslag in expander ---
     alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
