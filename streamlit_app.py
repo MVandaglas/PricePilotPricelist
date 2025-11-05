@@ -90,6 +90,7 @@ def bepaal_klantgrootte(omzet: float) -> str:
         return "D"
 
 # Defaults
+# Defaults voor tonen en coating-opslag per productgroep
 ALWAYS_ON = {
     "IsoPerform Alfa (HR++)",
     "IsoPerform Eclaz Zen (HR++)",
@@ -106,16 +107,10 @@ DEFAULT_UPLIFTS = {
     # overige niet genoemde productgroepen krijgen 30
 }
 
-# Init session state
-if "pg_show" not in st.session_state:
-    st.session_state.pg_show = {pg: ("ja" if pg in ALWAYS_ON else "nee") for pg in alle_pg}
-
-if "pg_uplift" not in st.session_state:
-    st.session_state.pg_uplift = {pg: float(DEFAULT_UPLIFTS.get(pg, 30)) for pg in alle_pg}
-
 def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
     """Zeer eenvoudige PDF-export (optioneel). Vereist reportlab."""
     try:
+        from io import BytesIO
         from reportlab.lib.pagesizes import A4, landscape
         from reportlab.pdfgen import canvas
         from reportlab.lib.units import cm
@@ -200,6 +195,7 @@ with st.sidebar:
     SF_SECURITY_TOKEN = os.getenv("SF_SECURITY_TOKEN")
     SF_DOMAIN = "test"  # 'test' = Sandbox
 
+    # Altijd een DataFrame hebben (voorkomt NameError)
     accounts_df = pd.DataFrame(columns=["Klantnaam", "Klantnummer", "Klantinfo", "Omzet klant (€)", "Klantgrootte"])
     
     def fetch_salesforce_accounts_direct(sf_connection):
@@ -216,14 +212,9 @@ with st.sidebar:
             st.warning(f"Fout bij ophalen van Salesforce-accounts: {e}")
             return []
     
-    accounts_df["Klantnummer"] = accounts_df["Klantnummer"].astype(str)  # eerst naar string
-    accounts_df["Omzet klant (€)"] = accounts_df["Klantnummer"].apply(bepaal_omzet)
-    accounts_df["Klantgrootte"] = accounts_df["Omzet klant (€)"].apply(bepaal_klantgrootte)
-    accounts_df["Klantinfo"] = accounts_df["Klantnummer"] + " - " + accounts_df["Klantnaam"]
-    
-    # Verbind met Salesforce
-    sf = None
+    # Verbind met Salesforce + opbouwen accounts_df
     try:
+        sf = None
         if SF_USERNAME and SF_PASSWORD and SF_SECURITY_TOKEN:
             session_id, instance = SalesforceLogin(
                 username=SF_USERNAME,
@@ -233,19 +224,40 @@ with st.sidebar:
             sf = Salesforce(instance=instance, session_id=session_id)
             records = fetch_salesforce_accounts_direct(sf)
             if records:
-                accounts_df = (
-                    pd.DataFrame(records)
-                    .drop(columns="attributes", errors="ignore")
-                    .rename(columns={"Name": "Klantnaam", "ERP_Number__c": "Klantnummer"})
-                )
-    
-                if "Klantnummer" in accounts_df.columns:
+                tmp_df = pd.DataFrame(records).drop(columns="attributes", errors="ignore")
+                # Controleer verplichte kolommen
+                if {"Name", "ERP_Number__c"}.issubset(tmp_df.columns):
+                    accounts_df = tmp_df.rename(columns={"Name": "Klantnaam", "ERP_Number__c": "Klantnummer"})
                     accounts_df["Klantnummer"] = accounts_df["Klantnummer"].astype(str)
+
+                    # Omzet en klantgrootte
+                    def bepaal_omzet(klantnummer: str) -> float:
+                        if klantnummer.startswith("10"):
+                            return 76000
+                        elif klantnummer.startswith("11"):
+                            return 200000
+                        elif klantnummer.startswith("12"):
+                            return 300000
+                        elif klantnummer.startswith(("13", "14", "15", "16")):
+                            return 700000
+                        else:
+                            return 50000
+
+                    def bepaal_klantgrootte(omzet: float) -> str:
+                        if omzet > 500000:
+                            return "A"
+                        elif omzet > 250000:
+                            return "B"
+                        elif omzet > 100000:
+                            return "C"
+                        else:
+                            return "D"
+
                     accounts_df["Omzet klant (€)"] = accounts_df["Klantnummer"].apply(bepaal_omzet)
                     accounts_df["Klantgrootte"] = accounts_df["Omzet klant (€)"].apply(bepaal_klantgrootte)
                     accounts_df["Klantinfo"] = accounts_df["Klantnummer"] + " - " + accounts_df["Klantnaam"]
                 else:
-                    st.warning("Geen geldige klantnummers gevonden in Salesforce-data.")
+                    st.warning(f"Onverwachte Salesforce-kolommen: {list(tmp_df.columns)}")
     except Exception as e:
         st.warning(f"Fout bij het verbinden met Salesforce: {e}")
     
@@ -257,15 +269,16 @@ with st.sidebar:
         klant_opts = list(sap_prices_all.keys()) if sap_prices_all else ["100007"]
         klant = st.selectbox("Klantnummer (fallback)", klant_opts, index=0)
 
+    # Metrics (alleen als SF-data beschikbaar is)
     if not accounts_df.empty:
-        gekozen_klant = accounts_df.loc[accounts_df["Klantnummer"] == klant].iloc[0]
+        gekozen_klant = accounts_df.loc[accounts_df["Klantnummer"] == str(klant)].iloc[0]
         col1, col2 = st.columns(2)
         col1.metric("💶 Omzet klant", f"€ {gekozen_klant['Omzet klant (€)']:,.0f}".replace(",", "."))
         col2.metric("🏷️ Klantgrootte", gekozen_klant["Klantgrootte"])
 
-    # Klantgrootte ophalen voor de geselecteerde klant
+    # Klantgrootte ophalen voor default prijsparameters
     klantgrootte = None
-    if 'accounts_df' in locals() and not accounts_df.empty:
+    if not accounts_df.empty:
         sel = accounts_df.loc[accounts_df["Klantnummer"] == str(klant)]
         if not sel.empty:
             klantgrootte = sel["Klantgrootte"].iloc[0]
@@ -277,24 +290,14 @@ with st.sidebar:
     base_default = float(BASE_PRICE_BY_SIZE.get(klantgrootte, 30))
     permm_default = float(PER_MM_BY_SIZE.get(klantgrootte, 2.50))
 
-
     # --- Productgroepen + S/M/L + coating-opslag in expander ---
     alle_pg = sorted(df_all["Productgroep"].dropna().unique().tolist()) if "Productgroep" in df_all.columns else []
-    
-    # init state voor keuzes per productgroep
-    ALWAYS_ON = {
-        "IsoPerform Alfa (HR++)",
-        "IsoPerform Eclaz Zen (HR++)",
-        "IsoPerform SS Zero (HR++)",
-        "TriplePerform 74/54 (HR++)",
-    }
-    
-    if "pg_show" not in st.session_state:
-        st.session_state.pg_show = {
-            pg: ("ja" if pg in ALWAYS_ON else "nee") 
-            for pg in alle_pg
-        }
 
+    # Init session state (éénmalig of bij nieuwe pg's)
+    if "pg_show" not in st.session_state:
+        st.session_state.pg_show = {pg: ("ja" if pg in ALWAYS_ON else "nee") for pg in alle_pg}
+    if "pg_uplift" not in st.session_state or set(st.session_state.pg_uplift.keys()) != set(alle_pg):
+        st.session_state.pg_uplift = {pg: float(DEFAULT_UPLIFTS.get(pg, 30)) for pg in alle_pg}
     
     with st.expander("Productgroepen & coating-toeslagen", expanded=False):
         st.caption("Zet per productgroep aan/uit en geef een opslag in €/m² op.")
@@ -313,29 +316,16 @@ with st.sidebar:
                 index=0 if st.session_state.pg_show.get(pg, "nee") == "ja" else 1,
                 key=f"pg_show_{pg}",
             )
-            
-            # ⬇️ Toon en update de opslag per productgroep
-            st.session_state.pg_uplift[pg] = c3.number_input(
+            # toon & update opslag per productgroep
+            current = float(st.session_state.pg_uplift.get(pg, 30.0))
+            new_val = c3.number_input(
                 label="",
-                value=float(st.session_state.pg_uplift.get(pg, 30.0)),
-                step=0.5,  # pas aan naar wens (0.1/0.5/1.0)
+                value=current,
+                step=0.5,
+                min_value=0.0,
                 key=f"pg_uplift_{pg}",
             )
-            DEFAULT_UPLIFTS = {
-                "IP SolarControl Sun (ZHR++)": 6,
-                "IsoPerform SS Zero (HR++)": 12,
-                "SolarControl SKN 154 (ZHR++)": 25,
-                "SolarControl SKN165 (ZHR++)": 25,
-                "IsoPerform Eclaz Zen (HR++)": 6,
-                "IP Energy 72/38 (ZHR++)": 6,
-                # overige niet genoemde productgroepen krijgen 30
-            }
-            
-            if "pg_uplift" not in st.session_state:
-                st.session_state.pg_uplift = {
-                    pg: float(DEFAULT_UPLIFTS.get(pg, 30)) 
-                    for pg in alle_pg
-                }
+            st.session_state.pg_uplift[pg] = new_val
 
     # resultaatvariabelen voor gebruik in de rest van de app (ongewijzigde namen)
     sel_pg = [pg for pg, v in st.session_state.pg_show.items() if v == "ja"]
@@ -363,6 +353,7 @@ with st.sidebar:
     
     st.markdown("---")
     export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
+
 
 # ---------------------------
 # Pagina: Prijslijst
