@@ -457,7 +457,7 @@ if selected == "Prijslijst":
             "Artikelnummer": st.column_config.TextColumn(disabled=True),
             "Artikelnaam": st.column_config.TextColumn(disabled=True),
             "Productgroep": st.column_config.TextColumn(disabled=True),
-            "mm": st.column_config.NumberColumn(disabled=True),
+            "mm": st.column_config.NumberColumn(disabled=True),column_order=[c for c in df.columns if c != "mm"],
             "Huidige m2 prijs": st.column_config.NumberColumn(disabled=True),
             "RSP": st.column_config.NumberColumn(disabled=True),
             "Handmatige prijs": st.column_config.NumberColumn(help="Laat leeg om RSP te gebruiken"),
