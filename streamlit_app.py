@@ -421,6 +421,7 @@ with st.sidebar:
     
     with col3:
         st.markdown("<div style='text-align: left; font-weight: bold;'>RSP</div>", unsafe_allow_html=True)
+
     
     if not rsp_build_up:
         st.markdown("---")
@@ -513,6 +514,10 @@ if selected == "Prijslijst":
     # Huidige m2 prijs (SAP) met fallback naar default klant 100007
     sap_for_client = sap_prices_all.get(klant, {})
     sap_default = sap_prices_all.get("100007", {})
+    
+    # Zorg dat gelaagd_component altijd bestaat
+    if "gelaagd_component" not in locals():
+        gelaagd_component = 0.0
 
     def map_sap_price(artnr: str):
         art = str(artnr)
