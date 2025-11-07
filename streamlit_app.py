@@ -313,8 +313,7 @@ with st.sidebar:
         if not sel.empty:
             klantgrootte = sel["Klantgrootte"].iloc[0]
 
-# Altijd een DataFrame hebben (voorkomt NameError)
-accounts_df = pd.DataFrame(columns=["Klantnaam", "Klantnummer", "Klantinfo", "Omzet klant (€)", "Klantgrootte"])
+
     
     # Defaults per klantgrootte
     BASE_PRICE_BY_SIZE = {"A": 30, "B": 32, "C": 34, "D": 37}
@@ -434,6 +433,9 @@ accounts_df = pd.DataFrame(columns=["Klantnaam", "Klantnummer", "Klantinfo", "Om
         
         st.markdown("---")
         export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
+
+# Altijd een DataFrame hebben (voorkomt NameError)
+accounts_df = pd.DataFrame(columns=["Klantnaam", "Klantnummer", "Klantinfo", "Omzet klant (€)", "Klantgrootte"])
 
 def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
     pg = row.get("Productgroep", "")
