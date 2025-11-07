@@ -118,6 +118,8 @@ def bepaal_klantgrootte(omzet: float) -> str:
         return "C"
     else:
         return "D"
+        
+accounts_df["Klantgrootte"] = accounts_df["Omzet klant (€)"].apply(bepaal_klantgrootte)
 
 # Defaults
 # Defaults voor tonen en coating-opslag per productgroep
@@ -434,8 +436,6 @@ with st.sidebar:
         st.markdown("---")
         export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
-# Altijd een DataFrame hebben (voorkomt NameError)
-accounts_df = pd.DataFrame(columns=["Klantnaam", "Klantnummer", "Klantinfo", "Omzet klant (€)", "Klantgrootte"])
 
 def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
     pg = row.get("Productgroep", "")
@@ -447,11 +447,12 @@ def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift:
 def compute_rsp_with_matrix(r, accounts_df):
     klantnummer = r.get("Klantnummer")
     klant_info = accounts_df.loc[accounts_df["Klantnummer"] == klantnummer]
-    if not klant_info.empty:
-        klass = str(klant_info.iloc[0].get("Klantgrootte", "C")).upper()
-    else:
-        klass = "C"  # fallback
+    klass = str(klant_info.iloc[0].get("Klantgrootte", "C")).upper() if not klant_info.empty else "C"
 
+    base_price_alfa = BASE_PRICE_ALFA_BY_CLASS.get(klass, 36)
+    per_mm_uplift   = PER_MM_UPLIFT_BY_CLASS.get(klass, 2.5)
+    return compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift)
+    
 # ---------------------------
 # Pagina: Prijslijst
 # ---------------------------
@@ -486,7 +487,7 @@ if selected == "Prijslijst":
     # 3) Alleen dit stuk vervangen t.o.v. je huidige RSP-toekenning
     df["RSP"] = df.apply(
         lambda r: round(
-            compute_rsp_with_matrix(r)
+            compute_rsp_with_matrix(r, accounts_df)
             + (str(r.get("Artikelnaam", "")).count(".") * gelaagd_component),
             2
         ),
