@@ -452,9 +452,22 @@ def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift:
 
 # 2) Helperfunctie koppelt automatisch aan Klantgrootte
 def compute_rsp_with_matrix(r, accounts_df):
-    klantnummer = r.get("Klantnummer")
-    klant_info = accounts_df.loc[accounts_df["Klantnummer"] == klantnummer]
-    klass = str(klant_info.iloc[0].get("Klantgrootte", "C")).upper() if not klant_info.empty else "C"
+    # altijd als string werken
+    klantnummer = str(r.get("Klantnummer", "") or "")
+
+    # zoeken in accounts_df (als beschikbaar)
+    if klantnummer and not accounts_df.empty and "Klantnummer" in accounts_df.columns:
+        # zorg dat beide kanten str zijn
+        sel = accounts_df[accounts_df["Klantnummer"].astype(str) == klantnummer]
+    else:
+        sel = pd.DataFrame()
+
+    if not sel.empty and "Klantgrootte" in sel.columns:
+        klass = str(sel.iloc[0]["Klantgrootte"]).upper()
+    else:
+        # nette fallback via jouw bestaande logica op klantnummer → omzet → grootte
+        omzet = bepaal_omzet(klantnummer) if klantnummer else 0
+        klass = bepaal_klantgrootte(omzet)
 
     base_price_alfa = BASE_PRICE_ALFA_BY_CLASS.get(klass, 36)
     per_mm_uplift   = PER_MM_UPLIFT_BY_CLASS.get(klass, 2.5)
@@ -476,6 +489,7 @@ if selected == "Prijslijst":
     df["Material"] = df["Material"].astype("Int64")
     df["Artikelnummer"] = df["Material"].astype(str)
     df["Artikelnaam"] = df["Description"]
+    df["Klantnummer"] = str(klant)
     if "mm" not in df.columns:
         df["mm"] = 0.0
     df["mm"] = pd.to_numeric(df["mm"], errors="coerce").fillna(0.0)
