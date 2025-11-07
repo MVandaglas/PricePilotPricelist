@@ -39,6 +39,19 @@ def load_sap_prices() -> dict:
         return {
             "100007": {},  # lege mapping; kan later gevuld worden
         }
+        
+# 1) Matrixen toevoegen (eenmalig bovenin je script)
+BASE_PRICE_ALFA_BY_CLASS = {'A': 32, 'B': 34, 'C': 36, 'D': 37}
+PER_MM_UPLIFT_BY_CLASS   = {'A': 2.0, 'B': 2.5, 'C': 2.5, 'D': 2.75}
+
+per_pg_uplift = {
+    "IsoPerform SS Zero (HR++)": 12,
+    "SolarControl SKN 154 (ZHR++)": 25,
+    "SolarControl SKN165 (ZHR++)": 25,
+    "IsoPerform Eclaz Zen (HR++)": 6,
+    "IP Energy 72/38 (ZHR++)": 6,
+    "IsoPerform ALFA (HR++)": 0,
+}
 
 DEFAULT_CUSTOMER_ID = "100007"
 
@@ -69,11 +82,11 @@ def sml_filter(df: pd.DataFrame, pick: str) -> pd.DataFrame:
         return df[df["SML"].isin(["S", "M"])]
     return df  # L = alles
 
-def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
-    pg = row.get("Productgroep", "")
-    mm = float(row.get("mm", 0.0) or 0.0)
-    pg_uplift = float(per_pg_uplift.get(pg, 0.0) or 0.0)
-    return float(base_price_alfa) + pg_uplift + ((mm -8) * float(per_mm_uplift))
+def compute_rsp_with_matrix(r):
+    klass = str(r.get("Klantklasse", "C")).upper()
+    base_price_alfa = BASE_PRICE_ALFA_BY_CLASS.get(klass, 36)
+    per_mm_uplift   = PER_MM_UPLIFT_BY_CLASS.get(klass, 2.5)
+    return compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift)
 
 def prijs_kwaliteit(final_price, min_p, max_p) -> str:
     try:
@@ -454,11 +467,11 @@ if selected == "Prijslijst":
     
     df["Huidige m2 prijs"] = df["Artikelnummer"].map(map_sap_price)
     
-    # RSP
+    # 3) Alleen dit stuk vervangen t.o.v. je huidige RSP-toekenning
     df["RSP"] = df.apply(
         lambda r: round(
-            compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift)
-            + (r["Artikelnaam"].count(".") * gelaagd_component),
+            compute_rsp_with_matrix(r)
+            + (str(r.get("Artikelnaam", "")).count(".") * gelaagd_component),
             2
         ),
         axis=1
