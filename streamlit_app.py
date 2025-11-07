@@ -386,11 +386,21 @@ with st.sidebar:
     )
 
     # Toggle onder S/M/L
-    rsp_build_up = st.toggle(
-        "Build Up - RSP - Build Up",
-        value=False,
-        help="Toon de opbouw van de RSP (per component/opslag)."
-    )
+    col1, col2, col3 = st.columns([1, 0.6, 1])
+    
+    with col1:
+        st.markdown("**RSP**")
+    
+    with col2:
+        rsp_build_up = st.switch(
+            "",
+            value=False,
+            help="Schakel tussen RSP (vaste lijstprijs met korting) en Build Up (prijs op basis van mm en coating).",
+            key="rsp_build_up"
+        )
+    
+    with col3:
+        st.markdown("**Build Up**")
 
     if not rsp_build_up:
         st.markdown("---")
