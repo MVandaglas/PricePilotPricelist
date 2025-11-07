@@ -585,7 +585,7 @@ if selected == "Prijslijst":
     show_cols = [
         "Artikelnummer","Artikelnaam","Productgroep","mm",
         "Huidige m2 prijs","RSP","Handmatige prijs","Final prijs",
-        "Prijskwaliteit","Omzet conditie","Omzet totaal","Effect aanpassing"
+        "Prijskwaliteit","New Prijskwaliteit","Omzet conditie","Omzet totaal","Effect aanpassing"
     ]
     display_df = df.reindex(columns=show_cols).copy()
 
