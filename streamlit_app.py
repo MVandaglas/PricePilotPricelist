@@ -81,6 +81,12 @@ def sml_filter(df: pd.DataFrame, pick: str) -> pd.DataFrame:
     elif pick == "M":
         return df[df["SML"].isin(["S", "M"])]
     return df  # L = alles
+    
+def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
+    pg = row.get("Productgroep", "")
+    mm = float(row.get("mm", 0.0) or 0.0)
+    pg_uplift = float(per_pg_uplift.get(pg, 0.0) or 0.0)
+    return float(base_price_alfa) + pg_uplift + ((mm -8) * float(per_mm_uplift))
 
 def compute_rsp_with_matrix(r):
     klass = str(r.get("Klantklasse", "C")).upper()
