@@ -112,10 +112,10 @@ def bepaal_klantgrootte(omzet: float) -> str:
 # Defaults
 # Defaults voor tonen en coating-opslag per productgroep
 ALWAYS_ON = {
-    "IsoPerform Alfa (HR++)",
-    "IsoPerform Eclaz Zen (HR++)",
-    "IsoPerform SS Zero (HR++)",
-    "TriplePerform 74/54 (HR++)",
+    "IsoPerform ALFA (HR++)",
+    #"IsoPerform Eclaz Zen (HR++)",
+    #"IsoPerform SS Zero (HR++)",
+    #"TriplePerform 74/54 (HR++)",
 }
 DEFAULT_UPLIFTS = {
     "IP SolarControl Sun (ZHR++)": 6,
@@ -350,8 +350,13 @@ with st.sidebar:
 
     # resultaatvariabelen voor gebruik in de rest van de app (ongewijzigde namen)
     sel_pg = [pg for pg, v in st.session_state.pg_show.items() if v == "ja"]
-    sml_pick = st.radio("S/M/L lijst", ["S", "M", "L"], horizontal=True,
-                        help="S = hardlopers, M = S+M, L = alle artikelen")
+    sml_pick = st.radio(
+        "S/M/L lijst",
+        ["S", "M", "L"],
+        index=1,  # standaard op "M"
+        horizontal=True,
+        help="S = hardlopers, M = S+M, L = alle artikelen"
+    )
     
     st.markdown("---")
     st.caption("Prijsparameters")
