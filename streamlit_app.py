@@ -82,6 +82,12 @@ def sml_filter(df: pd.DataFrame, pick: str) -> pd.DataFrame:
         return df[df["SML"].isin(["S", "M"])]
     return df  # L = alles
 
+def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
+    pg = row.get("Productgroep", "")
+    mm = float(row.get("mm", 0.0) or 0.0)
+    pg_uplift = float(per_pg_uplift.get(pg, 0.0) or 0.0)
+    return float(base_price_alfa) + pg_uplift + ((mm -8) * float(per_mm_uplift))
+
 # 2) Helperfunctie koppelt automatisch aan Klantgrootte
 def compute_rsp_with_matrix(r, accounts_df):
     klantnummer = r.get("Klantnummer")
@@ -91,11 +97,6 @@ def compute_rsp_with_matrix(r, accounts_df):
     else:
         klass = "C"  # fallback
 
-def compute_rsp_with_matrix(r):
-    klass = str(r.get("Klantgrootte", "C")).upper()
-    base_price_alfa = BASE_PRICE_ALFA_BY_CLASS.get(klass, 36)
-    per_mm_uplift   = PER_MM_UPLIFT_BY_CLASS.get(klass, 2.5)
-    return compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift)
 
 def prijs_kwaliteit(final_price, min_p, max_p) -> str:
     try:
