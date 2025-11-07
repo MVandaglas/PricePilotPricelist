@@ -3,6 +3,7 @@ import pandas as pd
 from io import BytesIO
 from streamlit_option_menu import option_menu
 import numpy as np
+from functools import partial
 
 # ---------------------------
 # Config
@@ -443,11 +444,23 @@ with st.sidebar:
         st.markdown("---")
         export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
-def compute_handmatige_prijs(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
+# 1) Kernfunctie (géén ronde/tekst hier)
+def _compute_handmatig_core(row, base_price_alfa, per_pg_uplift, per_mm_uplift, gelaagd_component):
     pg = row.get("Productgroep", "")
     mm = float(row.get("mm", 0.0) or 0.0)
-    pg_uplift = float(per_pg_uplift.get(pg, 0.0) or 0.0)
-    return float(base_price_alfa) + pg_uplift + ((mm -8) * float(per_mm_uplift))
+    pg_uplift_val = float(per_pg_uplift.get(pg, 0.0) or 0.0)
+    layers = str(row.get("Artikelnaam", "")).count(".")
+    return float(base_price_alfa) + pg_uplift_val + ((mm - 8) * float(per_mm_uplift)) + (layers * float(gelaagd_component))
+
+# 2) Wrapper die de actuele UI-waarden bindt
+compute_handmatige_prijs = partial(
+    _compute_handmatig_core,
+    base_price_alfa=base_price_alfa,
+    per_pg_uplift=per_pg_uplift,        # uit je expander: st.session_state.pg_uplift
+    per_mm_uplift=per_mm_uplift,
+    gelaagd_component=gelaagd_component
+)
+
 
 def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
     pg = row.get("Productgroep", "")
@@ -520,13 +533,13 @@ if selected == "Prijslijst":
         axis=1
     )
 
-    # Handmatige prijs (editable)
-    df["RSP"] = df.apply(
-        lambda r: round(
-            compute_handmatige_prijs(r)
-            + (str(r.get("Artikelnaam", "")).count(".") * gelaagd_component),
-            2
-        ),
+    # 3) Kolom Handmatige prijs: alleen vullen waar leeg/NaN (edits blijven staan)
+    if "Handmatige prijs" not in df.columns:
+        df["Handmatige prijs"] = np.nan
+    
+    mask_leeg = df["Handmatige prijs"].isna() | (df["Handmatige prijs"] == "")
+    df.loc[mask_leeg, "Handmatige prijs"] = df.loc[mask_leeg].apply(
+        lambda r: round(compute_handmatige_prijs(r), 2),
         axis=1
     )
 
