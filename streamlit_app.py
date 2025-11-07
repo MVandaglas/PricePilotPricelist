@@ -443,7 +443,7 @@ if selected == "Prijslijst":
     df["RSP"] = df.apply(
         lambda r: round(
             compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift)
-            + (r["Omschrijving"].count(".") * gelaagd_component),
+            + (r["Artikelnaam"].count(".") * gelaagd_component),
             2
         ),
         axis=1
