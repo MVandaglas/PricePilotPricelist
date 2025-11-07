@@ -387,7 +387,7 @@ with st.sidebar:
 
     # Toggle onder S/M/L
     rsp_build_up = st.toggle(
-        "RSP - Build Up",
+        "Build Up - RSP - Build Up",
         value=False,
         help="Toon de opbouw van de RSP (per component/opslag)."
     )
