@@ -474,7 +474,7 @@ if selected == "Prijslijst":
     ratio_pct = np.where((~np.isnan(rsp_vals)) & (rsp_vals > 0),
                          (final_vals / rsp_vals) * 100,
                          np.nan)
-    df["Prijskwaliteit (%)"] = np.round(ratio_pct)
+    df["Prijskwaliteit"] = np.round(ratio_pct)
 
     
     
