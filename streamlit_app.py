@@ -89,7 +89,7 @@ def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift:
     return float(base_price_alfa) + pg_uplift + ((mm -8) * float(per_mm_uplift))
 
 def compute_rsp_with_matrix(r):
-    klass = str(r.get("Klantklasse", "C")).upper()
+    klass = str(r.get("Klantgrootte", "C")).upper()
     base_price_alfa = BASE_PRICE_ALFA_BY_CLASS.get(klass, 36)
     per_mm_uplift   = PER_MM_UPLIFT_BY_CLASS.get(klass, 2.5)
     return compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift)
