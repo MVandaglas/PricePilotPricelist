@@ -385,7 +385,7 @@ with st.sidebar:
         help="S = hardlopers, M = S+M, L = alle artikelen"
     )
 
-    col1, col2, col3 = st.columns([1, 0.6, 1])
+    col1, col2, col3 = st.columns([1, 0.2, 1])
     
     with col1:
         st.markdown("<div style='text-align: right; font-weight: bold;'>Build Up</div>", unsafe_allow_html=True)
@@ -401,28 +401,27 @@ with st.sidebar:
     with col3:
         st.markdown("<div style='text-align: left; font-weight: bold;'>RSP</div>", unsafe_allow_html=True)
     
-        if not rsp_build_up:
-            st.markdown("---")
-            st.caption("Prijsparameters")
-            base_price_alfa = st.number_input(
-                "Basismateriaal (IsoPerform ALFA 04 - #04)",
-                min_value=0.0, value=base_default, step=0.1,
-                help="Startpunt voor RSP; Alfa heeft geen coatingtoeslag"
-            )
-            per_mm_uplift = st.number_input(
-                "Opslag per mm (€/mm)",
-                min_value=0.0, value=permm_default, step=0.05
-            )
-            gelaagd_component = st.number_input(
-                "Opslag per gelaagd component",
-                min_value=0.0, value=20.0, step=0.5
-            )
-            
-            # dict met opslag per productgroep voor RSP-berekening
-            per_pg_uplift = dict(st.session_state.pg_uplift)
-            
-            st.markdown("---")
-            export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
+    if not rsp_build_up:
+        st.markdown("---")
+        st.caption("Prijsparameters")
+        base_price_alfa = st.number_input(
+            "Basismateriaal (IsoPerform ALFA 04 - #04)",
+            min_value=0.0, value=base_default, step=0.1,
+        )
+        per_mm_uplift = st.number_input(
+            "Opslag per mm (€/mm)",
+            min_value=0.0, value=permm_default, step=0.05
+        )
+        gelaagd_component = st.number_input(
+            "Opslag per gelaagd component",
+            min_value=0.0, value=20.0, step=0.5
+        )
+        
+        # dict met opslag per productgroep voor RSP-berekening
+        per_pg_uplift = dict(st.session_state.pg_uplift)
+        
+        st.markdown("---")
+        export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
 
 # ---------------------------
