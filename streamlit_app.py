@@ -461,7 +461,7 @@ def _compute_handmatig_core(row, base_price_alfa, per_pg_uplift, per_mm_uplift, 
     return float(base_price_alfa) + pg_uplift_val + ((mm - 8) * float(per_mm_uplift)) + (layers * float(gelaagd_component))
 
 # 2) Wrapper die de actuele UI-waarden bindt
-compute_handmatige_prijs = partial(
+def compute_handmatige_prijs = partial(
     _compute_handmatig_core,
     base_price_alfa=base_price_alfa,
     per_pg_uplift=per_pg_uplift,        # uit je expander: st.session_state.pg_uplift
