@@ -558,7 +558,7 @@ if selected == "Prijslijst":
 
 
     # Prijskwaliteit = (Final prijs / RSP) * 100, afgerond op hele getallen
-    final_vals = pd.to_numeric(df["Final prijs"], errors="coerce")
+    final_vals = pd.to_numeric(df["Huidige m2 prijs"], errors="coerce")
     rsp_vals   = pd.to_numeric(df["RSP"], errors="coerce")
     
     ratio_pct = np.where((~np.isnan(rsp_vals)) & (rsp_vals > 0),
