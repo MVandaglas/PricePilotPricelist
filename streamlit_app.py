@@ -40,6 +40,25 @@ def load_sap_prices() -> dict:
             "100007": {},  # lege mapping; kan later gevuld worden
         }
 
+DEFAULT_CUSTOMER_ID = "100007"
+
+def get_sap_price(material_id, customer_id, prices=None):
+    """
+    Haalt prijs op voor (customer_id, material_id) met fallback naar DEFAULT_CUSTOMER_ID.
+    Geeft None terug als nergens gevonden.
+    """
+    prices = prices or sap_prices_all
+    m = str(material_id)
+    c = str(customer_id)
+
+    # 1) klant-specifiek
+    if c in prices and m in prices[c]:
+        return prices[c][m]
+
+    # 2) fallback naar default klant
+    default = prices.get(DEFAULT_CUSTOMER_ID, {})
+    return default.get(m)
+
 # ---------------------------
 # Helper functies
 # ---------------------------
@@ -377,13 +396,17 @@ if selected == "Prijslijst":
         df["mm"] = 0.0
     df["mm"] = pd.to_numeric(df["mm"], errors="coerce").fillna(0.0)
 
-    # Huidige m2 prijs (SAP)
+    # Huidige m2 prijs (SAP) met fallback naar default klant 100007
     sap_for_client = sap_prices_all.get(klant, {})
+    sap_default = sap_prices_all.get("100007", {})
+    
     def map_sap_price(artnr: str):
-        # SAP dict keys vaak als strings
-        return sap_for_client.get(str(artnr), None)
+        art = str(artnr)
+        # eerst klant-specifiek, anders default klant
+        return sap_for_client.get(art) or sap_default.get(art)
+    
     df["Huidige m2 prijs"] = df["Artikelnummer"].map(map_sap_price)
-
+    
     # RSP
     df["RSP"] = df.apply(lambda r: round(compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift), 2), axis=1)
 
