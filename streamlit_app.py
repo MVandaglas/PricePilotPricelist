@@ -440,6 +440,14 @@ with st.sidebar:
         
         # dict met opslag per productgroep voor RSP-berekening
         per_pg_uplift = dict(st.session_state.pg_uplift)
+
+    else:
+        st.markdown("---")
+        st.caption("RSP-index")
+        rsp_pct = st.number_input(
+            "RSP-aanpassing (%)", min_value=50, max_value=150, value=100, step=1,
+            help="Final price = RSP × dit percentage"
+        )
         
         st.markdown("---")
         export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
@@ -534,15 +542,44 @@ if selected == "Prijslijst":
     )
 
     # 3) Kolom Handmatige prijs: alleen vullen waar leeg/NaN (edits blijven staan)
+    # kolom garanderen
     if "Handmatige prijs" not in df.columns:
         df["Handmatige prijs"] = np.nan
     
+    # helper voor Build Up (zelfde structuur als je RSP-formule)
+    def _compute_handmatig_core(row, base_price_alfa, per_pg_uplift, per_mm_uplift, gelaagd_component):
+        pg = row.get("Productgroep", "")
+        mm = float(row.get("mm", 0.0) or 0.0)
+        pg_uplift_val = float(per_pg_uplift.get(pg, 0.0) or 0.0)
+        layers = str(row.get("Artikelnaam", "")).count(".")
+        return float(base_price_alfa) + pg_uplift_val + ((mm - 8) * float(per_mm_uplift)) + (layers * float(gelaagd_component))
+    
+    # automatische waarde voor Handmatige prijs per modus
+    if rsp_build_up:
+        # RSP-modus → Handmatige prijs = RSP × percentage
+        df["Handmatige prijs_auto"] = (
+            pd.to_numeric(df["RSP"], errors="coerce") * (rsp_pct / 100.0)
+        ).round(2)
+    else:
+        # Build Up-modus → Handmatige prijs = opbouw (mm + coating + gelaagd)
+        compute_handmatige_prijs = partial(
+            _compute_handmatig_core,
+            base_price_alfa=base_price_alfa,
+            per_pg_uplift=per_pg_uplift,
+            per_mm_uplift=per_mm_uplift,
+            gelaagd_component=gelaagd_component
+        )
+        df["Handmatige prijs_auto"] = df.apply(
+            lambda r: round(compute_handmatige_prijs(r), 2),
+            axis=1
+        )
+    
+    # alleen lege/NaN cellen vullen; bestaande handmatige invoer blijft staan
     mask_leeg = df["Handmatige prijs"].isna() | (df["Handmatige prijs"] == "")
-    df.loc[mask_leeg, "Handmatige prijs"] = df.loc[mask_leeg].apply(
-        lambda r: round(compute_handmatige_prijs(r), 2),
-        axis=1
-    )
-
+    df.loc[mask_leeg, "Handmatige prijs"] = df.loc[mask_leeg, "Handmatige prijs_auto"]
+    
+    # ✅ Final prijs volgt ALTIJD de Handmatige prijs
+    df["Final prijs"] = pd.to_numeric(df["Handmatige prijs"], errors="coerce").round(2)
 
     # Final prijs
     def final_price_row(r):
@@ -613,10 +650,17 @@ if selected == "Prijslijst":
     )
 
     # Herberekenen op basis van editor
-    edited["Final prijs"] = edited.apply(
-        lambda r: round(float(r["Handmatige prijs"]), 2) if pd.notna(r["Handmatige prijs"]) and r["Handmatige prijs"] != "" else r["RSP"],
-        axis=1
-    )
+    # Herberekenen op basis van editor
+    edited["Handmatige prijs"] = pd.to_numeric(edited["Handmatige prijs"], errors="coerce")
+    
+    if rsp_build_up:
+        # RSP-modus: waar geen handmatige override is, vullen met RSP × %
+        auto_val = (pd.to_numeric(edited["RSP"], errors="coerce") * (rsp_pct / 100.0)).round(2)
+        mask_leeg = edited["Handmatige prijs"].isna()
+        edited.loc[mask_leeg, "Handmatige prijs"] = auto_val[mask_leeg]
+    
+    # ✅ Final price = Handmatige prijs
+    edited["Final prijs"] = edited["Handmatige prijs"].round(2)
 
 
     st.caption(f"Regels: {len(edited)}")
