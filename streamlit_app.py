@@ -391,7 +391,7 @@ with col1:
     st.markdown("<div style='text-align: right; font-weight: bold;'>Build Up</div>", unsafe_allow_html=True)
 
 with col2:
-    rsp_build_up = st.switch(
+    rsp_build_up = st.toggle(
         "",
         value=False,
         help="Schakel tussen RSP (vaste lijstprijs met korting) en Build Up (prijs op basis van mm en coating).",
