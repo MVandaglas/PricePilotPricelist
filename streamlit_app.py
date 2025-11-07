@@ -394,7 +394,6 @@ with st.sidebar:
         rsp_build_up = st.toggle(
             "",
             value=False,
-            help="Schakel tussen RSP (vaste lijstprijs met korting) en Build Up (prijs op basis van mm en coating).",
             key="rsp_build_up"
         )
     
