@@ -443,6 +443,11 @@ with st.sidebar:
         st.markdown("---")
         export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
+def compute_handmatige_prijs(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
+    pg = row.get("Productgroep", "")
+    mm = float(row.get("mm", 0.0) or 0.0)
+    pg_uplift = float(per_pg_uplift.get(pg, 0.0) or 0.0)
+    return float(base_price_alfa) + pg_uplift + ((mm -8) * float(per_mm_uplift))
 
 def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
     pg = row.get("Productgroep", "")
@@ -516,8 +521,14 @@ if selected == "Prijslijst":
     )
 
     # Handmatige prijs (editable)
-    if "Handmatige prijs" not in df.columns:
-        df["Handmatige prijs"] = None
+    df["RSP"] = df.apply(
+        lambda r: round(
+            compute_handmatige_prijs(r)
+            + (str(r.get("Artikelnaam", "")).count(".") * gelaagd_component),
+            2
+        ),
+        axis=1
+    )
 
 
     # Final prijs
