@@ -452,7 +452,7 @@ with st.sidebar:
         st.markdown("---")
         export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
-# 1) Kernfunctie (géén ronde/tekst hier)
+# 1) Kernfunctie blijft hetzelfde
 def _compute_handmatig_core(row, base_price_alfa, per_pg_uplift, per_mm_uplift, gelaagd_component):
     pg = row.get("Productgroep", "")
     mm = float(row.get("mm", 0.0) or 0.0)
@@ -460,14 +460,36 @@ def _compute_handmatig_core(row, base_price_alfa, per_pg_uplift, per_mm_uplift, 
     layers = str(row.get("Artikelnaam", "")).count(".")
     return float(base_price_alfa) + pg_uplift_val + ((mm - 8) * float(per_mm_uplift)) + (layers * float(gelaagd_component))
 
-# 2) Wrapper die de actuele UI-waarden bindt
-def compute_handmatige_prijs = partial(
-    _compute_handmatig_core,
-    base_price_alfa=base_price_alfa,
-    per_pg_uplift=per_pg_uplift,        # uit je expander: st.session_state.pg_uplift
-    per_mm_uplift=per_mm_uplift,
-    gelaagd_component=gelaagd_component
-)
+# 2) Zorg dat de kolom bestaat
+if "Handmatige prijs" not in df.columns:
+    df["Handmatige prijs"] = np.nan
+
+# 3) Automatische waarde per modus vullen in 'Handmatige prijs_auto'
+if not rsp_build_up:
+    # BUILD UP → bind UI-waarden en reken opbouw
+    compute_handmatige_prijs = partial(
+        _compute_handmatig_core,
+        base_price_alfa=base_price_alfa,
+        per_pg_uplift=per_pg_uplift,      # dict uit je expander
+        per_mm_uplift=per_mm_uplift,
+        gelaagd_component=gelaagd_component
+    )
+    df["Handmatige prijs_auto"] = df.apply(
+        lambda r: round(compute_handmatige_prijs(r), 2),
+        axis=1
+    )
+else:
+    # RSP-modus → RSP × percentage
+    df["Handmatige prijs_auto"] = (
+        pd.to_numeric(df["RSP"], errors="coerce") * (rsp_pct / 100.0)
+    ).round(2)
+
+# 4) Alleen lege/NaN cellen vullen (handmatige overrides blijven staan)
+mask_leeg = df["Handmatige prijs"].isna() | (df["Handmatige prijs"] == "")
+df.loc[mask_leeg, "Handmatige prijs"] = df.loc[mask_leeg, "Handmatige prijs_auto"]
+
+# 5) Final prijs volgt ALTIJD Handmatige prijs
+df["Final prijs"] = pd.to_numeric(df["Handmatige prijs"], errors="coerce").round(2)
 
 
 def compute_rsp(row, base_price_alfa: float, per_pg_uplift: dict, per_mm_uplift: float) -> float:
