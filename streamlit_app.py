@@ -440,7 +440,14 @@ if selected == "Prijslijst":
     df["Huidige m2 prijs"] = df["Artikelnummer"].map(map_sap_price)
     
     # RSP
-    df["RSP"] = df.apply(lambda r: round(compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift), 2), axis=1)
+    df["RSP"] = df.apply(
+        lambda r: round(
+            compute_rsp(r, base_price_alfa, per_pg_uplift, per_mm_uplift)
+            + (r["Omschrijving"].count(".") * gelaagd_component),
+            2
+        ),
+        axis=1
+    )
 
     # Handmatige prijs (editable)
     if "Handmatige prijs" not in df.columns:
