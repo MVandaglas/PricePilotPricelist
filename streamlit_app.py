@@ -39,6 +39,13 @@ def load_sap_prices() -> dict:
         return {
             "100007": {},  # lege mapping; kan later gevuld worden
         }
+
+if "accounts_df" not in locals():
+    # Simulatie of fallback als het nog niet geladen is
+    accounts_df = pd.DataFrame({
+        "Klantnummer": [100001, 100002, 100003],
+        "Omzet klant (€)": [1_200_000, 600_000, 150_000],
+    })
         
 # 1) Matrixen toevoegen (eenmalig bovenin je script)
 BASE_PRICE_ALFA_BY_CLASS = {'A': 32, 'B': 34, 'C': 36, 'D': 37}
