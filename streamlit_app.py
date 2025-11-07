@@ -165,6 +165,21 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
         cols = ["Material","Description","Productgroep","mm","Huidige m2 prijs","RSP","Handmatige prijs","Final prijs","Omzet conditie","Omzet totaal","Effect aanpassing"]
         show_df = df.reindex(columns=[c for c in cols if c in df.columns]).copy()
 
+        # Willekeurige omzet totaal tussen €0 en €2000
+        show_df["Omzet totaal"] = np.random.uniform(0, 2000, size=len(show_df)).round(2)
+        
+        # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
+        show_df["Omzet conditie"] = (show_df["Omzet totaal"] * np.random.uniform(0, 1, size=len(show_df))).round(2)
+        
+        # Effect aanpassing = Omzet conditie * (Handmatige prijs / Huidige m2 prijs)
+        show_df["Effect aanpassing"] = (
+            show_df["Omzet conditie"]
+            * (
+                pd.to_numeric(show_df["Handmatige prijs"], errors="coerce")
+                / pd.to_numeric(show_df["Huidige m2 prijs"], errors="coerce")
+            )
+        ).round(2)
+
         x0, y0 = 1.2*cm, height - 3*cm
         line_h = 0.6*cm
         col_widths = [3*cm, 6.2*cm, 3.2*cm, 1.6*cm, 3*cm, 2.4*cm, 3*cm, 2.6*cm, 2.6*cm, 3*cm, 3*cm, 3*cm]
