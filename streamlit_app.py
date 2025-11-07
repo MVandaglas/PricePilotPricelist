@@ -557,6 +557,8 @@ if selected == "Prijslijst":
     df["Final prijs"] = df.apply(final_price_row, axis=1)
 
 
+  
+
     # Prijskwaliteit = (Final prijs / RSP) * 100, afgerond op hele getallen
     final_vals = pd.to_numeric(df["Huidige m2 prijs"], errors="coerce")
     rsp_vals   = pd.to_numeric(df["RSP"], errors="coerce")
@@ -565,6 +567,15 @@ if selected == "Prijslijst":
                          (final_vals / rsp_vals) * 100,
                          np.nan)
     df["Prijskwaliteit"] = np.round(ratio_pct)
+
+    # Nieuwe Prijskwaliteit = (Final prijs / RSP) * 100, afgerond op hele getallen
+    new_final_vals = pd.to_numeric(df["Final prijs"], errors="coerce")
+    rsp_vals   = pd.to_numeric(df["RSP"], errors="coerce")
+    
+    new_ratio_pct = np.where((~np.isnan(rsp_vals)) & (rsp_vals > 0),
+                         (new_final_vals / rsp_vals) * 100,
+                         np.nan)
+    df["New Prijskwaliteit"] = np.round(new_ratio_pct)
 
     
     
