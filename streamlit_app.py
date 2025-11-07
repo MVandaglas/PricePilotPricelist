@@ -457,7 +457,7 @@ if selected == "Prijslijst":
             "Artikelnummer": st.column_config.TextColumn(disabled=True),
             "Artikelnaam": st.column_config.TextColumn(disabled=True),
             "Productgroep": st.column_config.TextColumn(disabled=True),
-            "mm": st.column_config.NumberColumn(disabled=True),column_order=[c for c in df.columns if c != "mm"],
+            "mm": st.column_config.NumberColumn(disabled=True),
             "Huidige m2 prijs": st.column_config.NumberColumn(disabled=True),
             "RSP": st.column_config.NumberColumn(disabled=True),
             "Handmatige prijs": st.column_config.NumberColumn(help="Laat leeg om RSP te gebruiken"),
@@ -468,6 +468,7 @@ if selected == "Prijslijst":
             "Effect aanpassing": st.column_config.NumberColumn(disabled=True),
         },
         key="prijs_editor",
+        column_order=[c for c in df.columns if c != "mm"],
     )
 
     # Herberekenen op basis van editor
