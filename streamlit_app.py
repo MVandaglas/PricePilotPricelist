@@ -311,20 +311,21 @@ with st.sidebar:
     base_default = float(BASE_PRICE_BY_SIZE.get(klantgrootte, 30))
     permm_default = float(PER_MM_BY_SIZE.get(klantgrootte, 2.50))
 
-allowed_pg_order = [
-    "IsoPerform ALFA (HR++)",
-    "IsoPerform Eclaz Zen (HR++)",
-    "IsoPerform SS Zero (HR++)",
-    "IP Energy 72/38 (ZHR++)",
-    "SolarControl SKN 154 (ZHR++)",
-    "SolarControl SKN165 (ZHR++)"
-]
-
-if "Productgroep" in df_all.columns:
-    unieke_pg = df_all["Productgroep"].dropna().unique().tolist()
-    alle_pg = [pg for pg in allowed_pg_order if pg in unieke_pg]
-else:
-    alle_pg = []
+    # --- Productgroepen + S/M/L + coating-opslag in expander ---
+    allowed_pg = [
+        "IP SolarControl Sun (ZHR++)",
+        "IsoPerform SS Zero (HR++)",
+        "SolarControl SKN 154 (ZHR++)",
+        "SolarControl SKN165 (ZHR++)",
+        "IsoPerform Eclaz Zen (HR++)",
+        "IP Energy 72/38 (ZHR++)",
+        "IsoPerform ALFA (HR++)"
+    ]
+    
+    alle_pg = [
+        pg for pg in sorted(df_all["Productgroep"].dropna().unique().tolist())
+        if pg in allowed_pg
+    ] if "Productgroep" in df_all.columns else []
     
     # Init session state (éénmalig of bij nieuwe pg's)
     if "pg_show" not in st.session_state:
