@@ -672,8 +672,6 @@ if selected == "Prijslijst":
         "Omzet conditie", "Omzet totaal", "Effect aanpassing"
     ]
 
-    # Maak kopie voor weergave met kleur voor negatieve waarden
-    display_df = display_df.copy()
     
     def color_negative(val):
         try:
