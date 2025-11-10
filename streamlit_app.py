@@ -680,9 +680,9 @@ if selected == "Prijslijst":
             "Prijskwaliteit":      st.column_config.TextColumn(label="📈 PQ", width=60, disabled=True),
             "New Prijskwaliteit":  st.column_config.TextColumn(label="🆕 New PQ", width=20, disabled=True),
     
-            "Omzet conditie":      st.column_config.NumberColumn(disabled=True),
-            "Omzet totaal":        st.column_config.NumberColumn(disabled=True),
-            "Effect aanpassing":   st.column_config.NumberColumn(disabled=True),
+            "Omzet conditie":      st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
+            "Omzet totaal":        st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
+            "Effect aanpassing":   st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
         },
         key="prijs_editor",
         column_order=[c for c in show_cols if c in display_df.columns],
