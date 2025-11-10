@@ -623,7 +623,7 @@ if selected == "Prijslijst":
 
     
     # Omzet conditie = 40% 
-    df["Omzet conditie"] = (df["Omzet totaal"] * 0.4
+    df["Omzet conditie"] = df["Omzet totaal"] * 0.4
     
     # Effect aanpassing = Omzet conditie * (Handmatige prijs / Huidige m2 prijs)
     hp  = pd.to_numeric(df["Handmatige prijs"], errors="coerce")
