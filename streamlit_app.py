@@ -768,34 +768,32 @@ if selected == "Prijslijst":
     total_impact = pd.to_numeric(edited["Effect aanpassing"], errors="coerce").fillna(0).sum()
     impact_str = f"€ {total_impact:,.0f}".replace(",", ".")
     
-    # Variant A: metric-look & feel met custom kleur
-    colA, _ = st.columns([1,3])
+    # Variant A: metrics naast elkaar
+    colA, colB = st.columns(2)
+    
+    # ---- Impact prijsaanpassing ----
     with colA:
         color = "red" if total_impact < 0 else "black"
-        st.markdown(
-            f"""
-            <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
-              <div style="font-size:0.9rem;color:#6b7280;">Impact prijsaanpassing</div>
-              <div style="font-size:1.6rem;font-weight:700;color:{color};margin-top:4px;">{impact_str}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    oc_num = pd.to_numeric(edited["Omzet conditie"], errors="coerce").fillna(0)
+        card_impact = f"""
+        <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
+          <div style="font-size:0.9rem;color:#6b7280;">Impact prijsaanpassing</div>
+          <div style="font-size:1.6rem;font-weight:700;color:{color};margin-top:4px;">{impact_str}</div>
+        </div>
+        """
+        html(card_impact, height=90)
     
-    # 'New Prijskwaliteit' kan '🔻 94' of '🟢 102' zijn -> numeriek deel extraheren
-    newpq_num = pd.to_numeric(
-        edited["New Prijskwaliteit"].astype(str).str.extract(r'(\d+(?:\.\d+)?)')[0],
-        errors="coerce"
-    )
-    
-    den = oc_num.sum()
-    pq_prijslijst = (oc_num * newpq_num).sum() / den if den > 0 else np.nan
-    pq_label = f"{pq_prijslijst:.0f}" if pd.notna(pq_prijslijst) else "—"
-    
-    colB, _ = st.columns([1,3])
+    # ---- Prijskwaliteit Prijslijst ----
     with colB:
+        oc_num = pd.to_numeric(edited["Omzet conditie"], errors="coerce").fillna(0)
+        newpq_num = pd.to_numeric(
+            edited["New Prijskwaliteit"].astype(str).str.extract(r'(\d+(?:\.\d+)?)')[0],
+            errors="coerce"
+        )
+    
+        den = oc_num.sum()
+        pq_prijslijst = (oc_num * newpq_num).sum() / den if den > 0 else np.nan
+        pq_label = f"{pq_prijslijst:.0f}" if pd.notna(pq_prijslijst) else "—"
+    
         card_pq = f"""
         <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
           <div style="font-size:0.9rem;color:#6b7280;">Prijskwaliteit Prijslijst</div>
