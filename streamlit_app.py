@@ -604,7 +604,21 @@ if selected == "Prijslijst":
     df["New Prijskwaliteit"] = np.round(new_ratio_pct)
 
     
-    
+    def add_quality_trend(df):
+    df = df.copy()
+    def trend(row):
+        old = row.get("Prijskwaliteit", np.nan)
+        new = row.get("New Prijskwaliteit", np.nan)
+        if pd.notna(old) and pd.notna(new):
+            if new < 100 and new < old:
+                return f"🔻 {new}"   # rode pijl omlaag
+            elif new > old:
+                return f"🟢 {new}"   # groene pijl omhoog
+        return f"{new}"  # geen symbool
+    df["New Prijskwaliteit"] = df.apply(trend, axis=1)
+    return df
+
+    display_df = add_quality_trend(display_df)
 
 
     # Tabel tonen (selectief editable)
@@ -629,8 +643,8 @@ if selected == "Prijslijst":
             "RSP": st.column_config.NumberColumn(width=20,disabled=True, format="€ %.2f",),
             "Handmatige prijs": st.column_config.NumberColumn(width=20,help="Laat leeg om RSP te gebruiken", format="€ %.2f",),
             "Final prijs": st.column_config.NumberColumn(width=20,disabled=True,format="€ %.2f",),
-            "Prijskwaliteit": st.column_config.TextColumn(width=20,disabled=True),
-            "New Prijskwaliteit": st.column_config.TextColumn(width=20,disabled=True),
+            "Prijskwaliteit": st.column_config.TextColumn(label="📈 PQ", width=60, disabled=True),
+            "New Prijskwaliteit": st.column_config.TextColumn(label="🆕 PQ", width=80, disabled=True),
             "Omzet conditie": st.column_config.NumberColumn(disabled=True),
             "Omzet totaal": st.column_config.NumberColumn(disabled=True),
             "Effect aanpassing": st.column_config.NumberColumn(disabled=True),
