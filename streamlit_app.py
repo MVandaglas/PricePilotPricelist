@@ -50,7 +50,7 @@ if "accounts_df" not in locals():
     })
         
 # 1) Matrixen toevoegen (eenmalig bovenin je script)
-BASE_PRICE_ALFA_BY_CLASS = {'A': 32, 'B': 34, 'C': 35, 'D': 37}
+BASE_PRICE_ALFA_BY_CLASS = {'A': 32, 'B': 33, 'C': 35, 'D': 37}
 PER_MM_UPLIFT_BY_CLASS   = {'A': 2.0, 'B': 2.5, 'C': 2.5, 'D': 2.75}
 
 per_pg_uplift = {
