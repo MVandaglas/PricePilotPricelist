@@ -178,7 +178,7 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
             * (
                 pd.to_numeric(show_df["Handmatige prijs"], errors="coerce")
                 / pd.to_numeric(show_df["Huidige m2 prijs"], errors="coerce")
-            )
+            ) - show_df["Omzet conditie"]
         ).round(2)
 
         x0, y0 = 1.2*cm, height - 3*cm
