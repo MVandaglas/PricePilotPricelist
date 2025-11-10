@@ -796,7 +796,7 @@ if selected == "Prijslijst":
     pq_prijslijst = (oc_num * newpq_num).sum() / den if den > 0 else np.nan
     pq_label = f"{pq_prijslijst:.0f}" if pd.notna(pq_prijslijst) else "—"
     
-    colB, _ = st.columns([1,1])
+    colB, _ = st.columns([1,3])
     with colB:
         st.markdown(
             f"""
