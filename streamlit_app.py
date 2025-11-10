@@ -603,6 +603,24 @@ if selected == "Prijslijst":
                          np.nan)
     df["New Prijskwaliteit"] = np.round(new_ratio_pct)
 
+    # ---- Voeg omzet-kolommen toe vóór tonen in data_editor ----
+    # Willekeurige omzet totaal tussen €0 en €2000
+    df["Omzet totaal"] = np.random.uniform(0, 2000, size=len(df)).round(2)
+    
+    # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
+    df["Omzet conditie"] = (df["Omzet totaal"] * np.random.uniform(0, 1, size=len(df))).round(2)
+    
+    # Effect aanpassing = Omzet conditie * (Handmatige prijs / Huidige m2 prijs)
+    hp  = pd.to_numeric(df["Handmatige prijs"], errors="coerce")
+    hmp = pd.to_numeric(df["Huidige m2 prijs"], errors="coerce")
+    oc  = pd.to_numeric(df["Omzet conditie"], errors="coerce")
+    
+    effect = oc * (hp / hmp)
+    df["Effect aanpassing"] = (
+        effect.replace([np.inf, -np.inf], np.nan).fillna(0).round(2)
+    )
+
+
     
     # helper: voeg visuele trend toe aan "New Prijskwaliteit"
     def add_quality_trend(df):
@@ -653,15 +671,14 @@ if selected == "Prijslijst":
             "Artikelnummer":       st.column_config.TextColumn(disabled=True),
             "Artikelnaam":         st.column_config.TextColumn(disabled=True),
             "Productgroep":        st.column_config.TextColumn(disabled=True),
-            "mm":                  st.column_config.NumberColumn(disabled=True),
-    
-            "Huidige m2 prijs":    st.column_config.NumberColumn(width=80, disabled=True, format="€ %.2f"),
-            "RSP":                 st.column_config.NumberColumn(width=80, disabled=True, format="€ %.2f"),
-            "Handmatige prijs":    st.column_config.NumberColumn(width=80, help="Laat leeg om RSP te gebruiken", format="€ %.2f"),
-            "Final prijs":         st.column_config.NumberColumn(width=80, disabled=True, format="€ %.2f"),
+
+            "Huidige m2 prijs":    st.column_config.NumberColumn(width=20, disabled=True, format="€ %.2f"),
+            "RSP":                 st.column_config.NumberColumn(width=20, disabled=True, format="€ %.2f"),
+            "Handmatige prijs":    st.column_config.NumberColumn(width=20, help="Laat leeg om RSP te gebruiken", format="€ %.2f"),
+            "Final prijs":         st.column_config.NumberColumn(width=20, disabled=True, format="€ %.2f"),
     
             "Prijskwaliteit":      st.column_config.TextColumn(label="📈 PQ", width=60, disabled=True),
-            "New Prijskwaliteit":  st.column_config.TextColumn(label="🆕 PQ", width=80, disabled=True),
+            "New Prijskwaliteit":  st.column_config.TextColumn(label="🆕 New PQ", width=20, disabled=True),
     
             "Omzet conditie":      st.column_config.NumberColumn(disabled=True),
             "Omzet totaal":        st.column_config.NumberColumn(disabled=True),
