@@ -172,8 +172,10 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
         # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
         show_df["Omzet conditie"] = (show_df["Omzet totaal"] * np.random.uniform(0, 1, size=len(show_df))).round(2)
         
-        # Effect aanpassing = Omzet conditie * (Handmatige prijs / Huidige m2 prijs) - Omzet conditie
-        show_df["Effect aanpassing"] = show_df["Omzet conditie"] / show_df["Huidige m2 prijs"] * show_df["Handmatige prijs"] - show_df["Omzet conditie"]
+        show_df["Effect aanpassing"] = (
+            show_df["Omzet conditie"] * 
+            ((show_df["Handmatige prijs"] - show_df["Huidige m2 prijs"]) / show_df["Huidige m2 prijs"])
+        ).round(2)
         
         x0, y0 = 1.2*cm, height - 3*cm
         line_h = 0.6*cm
