@@ -459,6 +459,7 @@ with st.sidebar:
         gelaagd_component = st.number_input(
             "Opslag per gelaagd component",
             min_value=0.0, value=20.0, step=0.5
+            key="gelaagd_component"   # ← toevoegen
         )
         
         # dict met opslag per productgroep voor RSP-berekening
@@ -471,6 +472,10 @@ with st.sidebar:
             "RSP-aanpassing (%)", min_value=50, max_value=150, value=100, step=1,
             help="Final price = RSP × dit percentage"
         )
+
+
+# ← voeg toe, direct onder rsp_pct:
+gelaagd_component = st.session_state.get("gelaagd_component", 20.0)
         
     st.markdown("---")
     datum = datetime.now().strftime("%Y-%m-%d")
@@ -541,7 +546,7 @@ if selected == "Prijslijst":
     
     # Zorg dat gelaagd_component altijd bestaat
     if "gelaagd_component" not in locals():
-        gelaagd_component = 0.0
+        gelaagd_component = 20.0
 
     def map_sap_price(artnr: str):
         art = str(artnr)
@@ -549,15 +554,13 @@ if selected == "Prijslijst":
 
     df["Huidige m2 prijs"] = df["Artikelnummer"].map(map_sap_price)
 
-    # Bereken RSP
-    df["RSP"] = df.apply(
-        lambda r: round(
-            compute_rsp_with_matrix(r, accounts_df)
-            + (str(r.get("Artikelnaam", "")).count(".") * gelaagd_component),
-            2,
-        ),
-        axis=1,
-    )
+    # RSP herberekenen met gelaagd_component in beide modi
+    df["RSP"] = (
+        df.apply(lambda r: compute_rsp_with_matrix(r, accounts_df), axis=1)
+        + df["Artikelnaam"].astype(str).str.count(r"\.") * float(gelaagd_component)
+    ).round(2)
+
+
 
     # --- Handmatige prijs berekenen afhankelijk van modus ---
     if "Handmatige prijs" not in df.columns:
