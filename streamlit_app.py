@@ -769,7 +769,7 @@ if selected == "Prijslijst":
     
     den = oc_num.sum()
     pq_prijslijst = (oc_num * newpq_num).sum() / den if den > 0 else np.nan
-    pq_label = f"{pq_prijslijst:.0f}%" if pd.notna(pq_prijslijst) else "—"
+    pq_label = f"{pq_prijslijst:.0f}" if pd.notna(pq_prijslijst) else "—"
     
     colB, _ = st.columns([1,1])
     with colB:
