@@ -651,7 +651,7 @@ if selected == "Prijslijst":
     
     # kolommen & volgorde
     show_cols = [
-        "Productgroep", "Artikelnummer", "Artikelnaam", "mm",
+        "Productgroep", "Artikelnummer", "Artikelnaam",
         "Huidige m2 prijs", "RSP", "Handmatige prijs", "Final prijs",
         "Prijskwaliteit", "New Prijskwaliteit",
         "Omzet conditie", "Omzet totaal", "Effect aanpassing"
