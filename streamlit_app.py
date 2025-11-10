@@ -895,35 +895,48 @@ if selected == "Prijslijst":
             html(card_6351, height=260)
         else:
             st.info("Artikel 1006351 staat niet in de huidige selectie.")
-    
+        
     # ---- Onder beide kolommen: Top 3 meest negatieve 'Effect aanpassing' (volle breedte) ----
     tmp = edited.copy()
     tmp["Effect_num"] = pd.to_numeric(tmp["Effect aanpassing"], errors="coerce")
     lowest3 = tmp[tmp["Effect_num"] < 0].sort_values("Effect_num").head(3)
+    
+    FONT_STACK = ("system-ui, -apple-system, 'Segoe UI', Roboto, Oxygen, Ubuntu, "
+                  "Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', "
+                  "'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif")
     
     if not lowest3.empty:
         rows = []
         for _, r in lowest3.iterrows():
             pq = _pq_num_series(pd.Series([r["New Prijskwaliteit"]])).iloc[0]
             rows.append(f"""
-                <tr>
-                  <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;">{r['Artikelnummer']}</td>
-                  <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;">{r['Artikelnaam']}</td>
-                  <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0; text-align:right;">{pq:.0f}%</td>
-                  <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0; text-align:right;">{_eur0(r['Effect_num'])}</td>
+                <tr style="font-size:1rem;">
+                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{r['Artikelnummer']}</td>
+                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{r['Artikelnaam']}</td>
+                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{pq:.0f}%</td>
+                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{_eur0(r['Effect_num'])}</td>
                 </tr>
             """)
     
         html_top3 = f"""
-        <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
-          <div style="font-size:0.9rem;color:#6b7280;">Top 3 grootste negatieve effecten</div>
-          <table style="width:100%; border-collapse:collapse; margin-top:6px;">
-            <thead>
-              <tr>
-                <th style="text-align:left; padding:6px 8px;">Artikel</th>
-                <th style="text-align:left; padding:6px 8px;">Naam</th>
-                <th style="text-align:right; padding:6px 8px;">New PQ</th>
-                <th style="text-align:right; padding:6px 8px;">Effect</th>
+        <div style="
+            padding:20px;
+            border:1px solid #e5e7eb;
+            border-radius:12px;
+            font-family:{FONT_STACK};
+            line-height:1.4;
+            margin-top:8px;
+        ">
+          <div style="font-size:1.05rem;color:#6b7280;font-weight:600;margin-bottom:8px;">
+            Top 3 grootste negatieve effecten
+          </div>
+          <table style="width:100%; border-collapse:collapse; margin-top:4px;">
+            <thead style="font-size:1rem;">
+              <tr style="border-bottom:1px solid #ddd;">
+                <th style="text-align:left; padding:8px 12px;">Artikel</th>
+                <th style="text-align:left; padding:8px 12px;">Naam</th>
+                <th style="text-align:right; padding:8px 12px;">New PQ</th>
+                <th style="text-align:right; padding:8px 12px;">Effect</th>
               </tr>
             </thead>
             <tbody>
@@ -932,14 +945,10 @@ if selected == "Prijslijst":
           </table>
         </div>
         """
-        # volle breedte
-        html(html_top3, height=180 + 36*len(rows))
+        # volle breedte renderen
+        html(html_top3, height=220 + 40 * len(rows))
     else:
         st.info("Geen negatieve effecten gevonden in de huidige selectie.")
-
-
-    # (Als je per se st.metric wilt gebruiken, kan dat ook — maar dan kun je de waarde niet rood maken zonder delta-truc.)
-
 # ---------------------------
 # Pagina: Beheer
 # ---------------------------
