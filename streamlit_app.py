@@ -713,8 +713,43 @@ if selected == "Prijslijst":
     # ✅ Final price = Handmatige prijs
     edited["Final prijs"] = edited["Handmatige prijs"].round(2)
 
+    # --- Recompute Effect aanpassing op basis van 'edited' ---
+    hp  = pd.to_numeric(edited["Handmatige prijs"], errors="coerce")
+    hm2 = pd.to_numeric(edited["Huidige m2 prijs"], errors="coerce")
+    oc  = pd.to_numeric(edited["Omzet conditie"], errors="coerce")
+    
+    edited["Effect aanpassing"] = (
+        oc * ((hp - hm2) / hm2)
+    ).replace([np.inf, -np.inf], np.nan).fillna(0).round(0)  # hele euro's
+
 
     st.caption(f"Regels: {len(edited)}")
+
+    oc_num = pd.to_numeric(edited["Omzet conditie"], errors="coerce").fillna(0)
+    
+    # 'New Prijskwaliteit' kan '🔻 94' of '🟢 102' zijn -> numeriek deel extraheren
+    newpq_num = (
+        edited["New Prijskwaliteit"]
+        .astype(str)
+        .str.extract(r'([-+]?\d*\.?\d+)')[0]  # pak de numerieke waarde uit de string
+    )
+    newpq_num = pd.to_numeric(newpq_num, errors="coerce")
+    
+    den = oc_num.sum()
+    pq_prijslijst = (oc_num * newpq_num).sum() / den if den > 0 else np.nan
+    pq_label = f"{pq_prijslijst:.0f}%" if pd.notna(pq_prijslijst) else "—"
+    
+    colB, _ = st.columns([1,1])
+    with colB:
+        st.markdown(
+            f"""
+            <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
+              <div style="font-size:0.9rem;color:#6b7280;">Prijskwaliteit Prijslijst</div>
+              <div style="font-size:1.6rem;font-weight:700;color:#111827;margin-top:4px;">{pq_label}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     c1, c2 = st.columns(2)
     with c1:
@@ -726,6 +761,25 @@ if selected == "Prijslijst":
             st.download_button("⬇️ Download PDF", data=pdf_bytes, file_name=f"{export_name}.pdf", mime="application/pdf")
         else:
             st.info("PDF-export vereist `reportlab` → `pip install reportlab`")
+
+    total_impact = pd.to_numeric(edited["Effect aanpassing"], errors="coerce").fillna(0).sum()
+    impact_str = f"€ {total_impact:,.0f}".replace(",", ".")
+    
+    # Variant A: metric-look & feel met custom kleur
+    colA, _ = st.columns([1,1])
+    with colA:
+        color = "red" if total_impact < 0 else "black"
+        st.markdown(
+            f"""
+            <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
+              <div style="font-size:0.9rem;color:#6b7280;">Impact prijsaanpassing</div>
+              <div style="font-size:1.6rem;font-weight:700;color:{color};margin-top:4px;">{impact_str}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    # (Als je per se st.metric wilt gebruiken, kan dat ook — maar dan kun je de waarde niet rood maken zonder delta-truc.)
 
 # ---------------------------
 # Pagina: Beheer
