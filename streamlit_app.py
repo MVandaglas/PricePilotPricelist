@@ -703,15 +703,7 @@ if selected == "Prijslijst":
         display_df["Effect aanpassing"], errors="coerce"
     ).apply(fmt_effect)
 
-    st.markdown("""
-        <style>
-        /* Vergroot de hoogte van de data-editor */
-        section[data-testid="stDataFrame"] div[data-testid="stVerticalBlock"] {
-            max-height: 800px !important;  /* standaard ~400px, verdubbeld */
-            overflow-y: auto;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+
     
     # tabel tonen
     edited = st.data_editor(
