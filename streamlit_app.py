@@ -183,7 +183,7 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
 
         x0, y0 = 1.2*cm, height - 3*cm
         line_h = 0.6*cm
-        col_widths = [3*cm, 6.2*cm, 3.2*cm, 1.6*cm, 3*cm, 2.4*cm, 3*cm, 2.6*cm, 2.6*cm, 3*cm, 3*cm, 3*cm]
+        col_widths = [3*cm, 6.2*cm, 3.2*cm, 1.6*cm, 2*cm, 2*cm, 2*cm, 2*cm, 2*cm, 2*cm, 2*cm, 2*cm]
 
         def draw_row(y, values, bold=False):
             c.setFont("Helvetica-Bold" if bold else "Helvetica", 8)
