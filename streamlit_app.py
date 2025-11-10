@@ -679,9 +679,7 @@ if selected == "Prijslijst":
         except Exception:
             return val
     
-    display_df["Effect aanpassing (visueel)"] = pd.to_numeric(
-        display_df["Effect aanpassing"], errors="coerce"
-    ).apply(fmt_effect)
+    display_df["Effect aanpassing (visueel)"] = pd.to_numeric(display_df["Effect aanpassing"], errors="coerce" ).apply(fmt_effect)
     
     def color_negative(val):
         try:
