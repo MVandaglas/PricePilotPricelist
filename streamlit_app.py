@@ -685,7 +685,7 @@ if selected == "Prijslijst":
         except Exception:
             return val
 
-display_df["Effect aanpassing (visueel)"] = display_df["Effect aanpassing"].apply(color_negative)
+    display_df["Effect aanpassing (visueel)"] = display_df["Effect aanpassing"].apply(color_negative)
     
     # data voorbereiden
     display_df = df.copy()
