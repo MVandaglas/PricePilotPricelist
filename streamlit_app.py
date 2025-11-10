@@ -679,6 +679,20 @@ if selected == "Prijslijst":
             return f"🔻 {v:,.0f}".replace(",", ".") if v < 0 else f"{v:,.0f}".replace(",", ".")
         except Exception:
             return val
+
+    def fmt_effect(val):
+    try:
+        v = float(val)
+        if v < 0:
+            return f"🔻 € {abs(v):,.0f}".replace(",", ".")
+        else:
+            return f"€ {v:,.0f}".replace(",", ".")
+    except Exception:
+        return val
+
+    display_df["Effect aanpassing (visueel)"] = pd.to_numeric(
+        display_df["Effect aanpassing"], errors="coerce"
+    ).apply(fmt_effect)
     
     # data voorbereiden
     display_df = df.copy()
@@ -710,7 +724,7 @@ if selected == "Prijslijst":
     
             "Omzet conditie":      st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
             "Omzet totaal":        st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
-            "Effect aanpassing (visueel)": st.column_config.TextColumn(label="Effect aanpassing", disabled=True, format="€ %.0f"),
+            "Effect aanpassing (visueel)": st.column_config.TextColumn(label="Effect aanpassing", disabled=True),
         },
         key="prijs_editor",
         column_order=[c for c in show_cols if c in display_df.columns] + ["Effect aanpassing (visueel)"],
