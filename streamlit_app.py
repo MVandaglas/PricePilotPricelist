@@ -468,7 +468,7 @@ with st.sidebar:
         
     st.markdown("---")
     datum = datetime.now().strftime("%Y-%m-%d")
-    export_name = f"Prijslijst_{klant}_{datum}"
+    export_name = f"Prijslijst_{klant}_{klantnaam}_{datum}"
     st.text_input("Bestandsnaam export (zonder extensie)", value=export_name)
 
 # ============================================================
