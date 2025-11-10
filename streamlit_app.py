@@ -167,10 +167,14 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
         show_df = df.reindex(columns=[c for c in cols if c in df.columns]).copy()
 
         # Willekeurige omzet totaal tussen €0 en €2000
-        show_df["Omzet totaal"] = np.random.uniform(0, 2000, size=len(show_df)).round(2)
+        show_df["Omzet totaal"] = (
+            show_df["Artikelnummer"].astype(str).str[-1].astype(float)
+            * pd.to_numeric(show_df["mm"], errors="coerce").fillna(0)
+            * 10
+        ).round(0)
         
         # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
-        show_df["Omzet conditie"] = (show_df["Omzet totaal"] * np.random.uniform(0, 1, size=len(show_df))).round(2)
+        show_df["Omzet conditie"] = (show_df["Omzet totaal"] * np.random.uniform(0.4 , size=len(show_df))).round(0)
 
 
         hp = pd.to_numeric(show_df["Handmatige prijs"], errors="coerce")
