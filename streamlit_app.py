@@ -174,7 +174,7 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
         ).round(0)
         
         # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
-        show_df["Omzet conditie"] = (show_df["Omzet totaal"] * np.random.uniform(0.4 , 0.4 , size=len(show_df))).round(0)
+        show_df["Omzet conditie"] = (show_df["Omzet totaal"] * 0.4
 
 
         hp = pd.to_numeric(show_df["Handmatige prijs"], errors="coerce")
@@ -622,8 +622,8 @@ if selected == "Prijslijst":
     ).round(0)
 
     
-    # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
-    df["Omzet conditie"] = (df["Omzet totaal"] * np.random.uniform(0, 1, size=len(df))).round(2)
+    # Omzet conditie = 40% 
+    df["Omzet conditie"] = (df["Omzet totaal"] * 0.4
     
     # Effect aanpassing = Omzet conditie * (Handmatige prijs / Huidige m2 prijs)
     hp  = pd.to_numeric(df["Handmatige prijs"], errors="coerce")
