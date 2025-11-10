@@ -824,25 +824,42 @@ if selected == "Prijslijst":
     
     colA, colB = st.columns(2)
     
+    # boven dit blok eenmalig zetten (of dichtbij laten staan)
+    FONT_STACK = ("system-ui, -apple-system, 'Segoe UI', Roboto, Oxygen, Ubuntu, "
+                  "Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', "
+                  "'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif")
+    
     # ---- Kaart links: 1006349 ----
     with colA:
         if "1006349" in sel_map:
             r = sel_map["1006349"]
             card_6349 = f"""
-            <div style="padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:12px;">
-              <div style="font-size:0.9rem;color:#6b7280;">Artikel 1006349</div>
-              <div style="font-weight:600;margin-top:2px;">{r['Artikelnummer']} – {r['Artikelnaam']}</div>
-              <div style="display:flex;gap:16px;margin-top:6px;">
+            <div style="
+                padding:24px;
+                border:1px solid #e5e7eb;
+                border-radius:12px;
+                margin-bottom:12px;
+                font-family:{FONT_STACK};
+                line-height:1.35;
+            ">
+              <div style="font-size:1rem;color:#6b7280;">Artikel 1006349</div>
+              <div style="font-weight:700;margin-top:6px;font-size:1.15rem;">
+                {r['Artikelnummer']} – {r['Artikelnaam']}
+              </div>
+    
+              <div style="display:flex;gap:24px;margin-top:10px;font-size:1.05rem;">
                 <div>Oude prijs: <b>{_eur0(r['Huidige m2 prijs'])}</b></div>
                 <div>Nieuwe prijs: <b>{_eur0(r['Final prijs'])}</b></div>
               </div>
-              <div style="display:flex;gap:16px;margin-top:4px;">
+    
+              <div style="display:flex;gap:24px;margin-top:8px;font-size:1.05rem;">
                 <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
                 <div>Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
               </div>
             </div>
             """
-            html(card_6349, height=150)
+            # ~dubbel zo hoog t.o.v. eerdere 150 → 260
+            html(card_6349, height=260)
         else:
             st.info("Artikel 1006349 staat niet in de huidige selectie.")
     
@@ -851,20 +868,31 @@ if selected == "Prijslijst":
         if "1006351" in sel_map:
             r = sel_map["1006351"]
             card_6351 = f"""
-            <div style="padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:12px;">
-              <div style="font-size:0.9rem;color:#6b7280;">Artikel 1006351</div>
-              <div style="font-weight:600;margin-top:2px;">{r['Artikelnummer']} – {r['Artikelnaam']}</div>
-              <div style="display:flex;gap:16px;margin-top:6px;">
+            <div style="
+                padding:24px;
+                border:1px solid #e5e7eb;
+                border-radius:12px;
+                margin-bottom:12px;
+                font-family:{FONT_STACK};
+                line-height:1.35;
+            ">
+              <div style="font-size:1rem;color:#6b7280;">Artikel 1006351</div>
+              <div style="font-weight:700;margin-top:6px;font-size:1.15rem;">
+                {r['Artikelnummer']} – {r['Artikelnaam']}
+              </div>
+    
+              <div style="display:flex;gap:24px;margin-top:10px;font-size:1.05rem;">
                 <div>Oude prijs: <b>{_eur0(r['Huidige m2 prijs'])}</b></div>
                 <div>Nieuwe prijs: <b>{_eur0(r['Final prijs'])}</b></div>
               </div>
-              <div style="display:flex;gap:16px;margin-top:4px;">
+    
+              <div style="display:flex;gap:24px;margin-top:8px;font-size:1.05rem;">
                 <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
                 <div>Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
               </div>
             </div>
             """
-            html(card_6351, height=150)
+            html(card_6351, height=260)
         else:
             st.info("Artikel 1006351 staat niet in de huidige selectie.")
     
