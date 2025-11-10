@@ -611,7 +611,13 @@ if selected == "Prijslijst":
 
     # ---- Voeg omzet-kolommen toe vóór tonen in data_editor ----
     # Willekeurige omzet totaal tussen €0 en €2000
-    df["Omzet totaal"] = np.random.uniform(0, 2000, size=len(df)).round(2)
+    # laatste cijfer van artikelnummer × mm × 10
+        show_df["Omzet totaal"] = (
+            show_df["Artikelnummer"].astype(str).str[-1].astype(float)
+            * pd.to_numeric(show_df["mm"], errors="coerce").fillna(0)
+            * 10
+        ).round(2)
+
     
     # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
     df["Omzet conditie"] = (df["Omzet totaal"] * np.random.uniform(0, 1, size=len(df))).round(2)
@@ -621,9 +627,9 @@ if selected == "Prijslijst":
     hmp = pd.to_numeric(df["Huidige m2 prijs"], errors="coerce")
     oc  = pd.to_numeric(df["Omzet conditie"], errors="coerce")
     
-    effect = oc * (hp / hmp)
+    effect = oc * (hp / hmp) - oc
     df["Effect aanpassing"] = (
-        effect.replace([np.inf, -np.inf], np.nan).fillna(0).round(2)
+        effect.replace([np.inf, -np.inf], np.nan).fillna(0).round(0)
     )
 
 
