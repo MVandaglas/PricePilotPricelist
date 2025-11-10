@@ -914,12 +914,16 @@ if selected == "Prijslijst":
         rows = []
         for _, r in lowest3.iterrows():
             pq = _pq_num_series(pd.Series([r["New Prijskwaliteit"]])).iloc[0]
+            old_price = _eur2(r["Huidige m2 prijs"])
+            new_price = _eur2(r["Final prijs"])
             rows.append(f"""
                 <tr style="font-size:1rem;">
                   <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{r['Artikelnummer']}</td>
                   <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{r['Artikelnaam']}</td>
+                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{old_price}</td>
+                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{new_price}</td>
                   <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{pq:.0f}%</td>
-                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{_eur0(r['Effect_num'])}</td>
+                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{_eur2(r['Effect_num'])}</td>
                 </tr>
             """)
     
@@ -940,6 +944,8 @@ if selected == "Prijslijst":
               <tr style="border-bottom:1px solid #ddd;">
                 <th style="text-align:left; padding:8px 12px;">Artikel</th>
                 <th style="text-align:left; padding:8px 12px;">Naam</th>
+                <th style="text-align:right; padding:8px 12px;">Oude prijs</th>
+                <th style="text-align:right; padding:8px 12px;">Nieuwe prijs</th>
                 <th style="text-align:right; padding:8px 12px;">New PQ</th>
                 <th style="text-align:right; padding:8px 12px;">Effect</th>
               </tr>
@@ -950,8 +956,7 @@ if selected == "Prijslijst":
           </table>
         </div>
         """
-        # volle breedte renderen
-        html(html_top3, height=220 + 40 * len(rows))
+        html(html_top3, height=240 + 40 * len(rows))
     else:
         st.info("Geen negatieve effecten gevonden in de huidige selectie.")
 # ---------------------------
