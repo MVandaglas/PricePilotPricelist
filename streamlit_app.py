@@ -614,7 +614,7 @@ if selected == "Prijslijst":
     # laatste cijfer van artikelnummer × mm × 10
     df["Omzet totaal"] = (
         df["Artikelnummer"].astype(str).str[-1].astype(float)
-        * pd.to_numeric(show_df["mm"], errors="coerce").fillna(0)
+        * pd.to_numeric(df["mm"], errors="coerce").fillna(0)
         * 10
     ).round(0)
 
