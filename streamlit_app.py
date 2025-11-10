@@ -685,12 +685,23 @@ if selected == "Prijslijst":
         except Exception:
             return val
 
-    display_df["Effect aanpassing (visueel)"] = display_df["Effect aanpassing"].apply(color_negative)
-    
     # data voorbereiden
     display_df = df.copy()
     display_df = add_quality_trend(display_df)  # eerst pijl-logica toepassen
     display_df = display_df.reindex(columns=[c for c in show_cols if c in display_df.columns]).reset_index(drop=True)
+    
+    # ---- Voeg visuele kolom toe voor rode waarden ----
+    def color_negative(val):
+        try:
+            val = float(val)
+            if val < 0:
+                return f"<span style='color:red;font-weight:600;'>{val:,.0f}</span>"
+            else:
+                return f"{val:,.0f}"
+        except Exception:
+            return val
+    
+    display_df["Effect aanpassing (visueel)"] = display_df["Effect aanpassing"].apply(color_negative)
     
     # tabel tonen
     edited = st.data_editor(
@@ -701,7 +712,7 @@ if selected == "Prijslijst":
             "Artikelnummer":       st.column_config.TextColumn(disabled=True),
             "Artikelnaam":         st.column_config.TextColumn(disabled=True),
             "Productgroep":        st.column_config.TextColumn(disabled=True),
-
+    
             "Huidige m2 prijs":    st.column_config.NumberColumn(width=20, disabled=True, format="€ %.2f"),
             "RSP":                 st.column_config.NumberColumn(width=20, disabled=True, format="€ %.2f"),
             "Handmatige prijs":    st.column_config.NumberColumn(width=20, help="Laat leeg om RSP te gebruiken", format="€ %.2f"),
@@ -712,10 +723,10 @@ if selected == "Prijslijst":
     
             "Omzet conditie":      st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
             "Omzet totaal":        st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
-            "Effect aanpassing (visueel)": st.column_config.TextColumn(disabled=True),
+            "Effect aanpassing (visueel)": st.column_config.TextColumn(label="Effect aanpassing", disabled=True),
         },
         key="prijs_editor",
-        column_order=[c for c in show_cols if c in display_df.columns],
+        column_order=[c for c in show_cols if c in display_df.columns] + ["Effect aanpassing (visueel)"],
     )
 
     # Herberekenen op basis van editor
