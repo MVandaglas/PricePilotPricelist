@@ -671,7 +671,8 @@ if selected == "Prijslijst":
         "Prijskwaliteit", "New Prijskwaliteit",
         "Omzet conditie", "Omzet totaal", "Effect aanpassing"
     ]
-
+    
+    # 🔹 Alleen emoji/tekst formatter (géén HTML)
     def fmt_effect(val):
         try:
             v = float(val)
@@ -679,36 +680,15 @@ if selected == "Prijslijst":
         except Exception:
             return val
     
-    
-    
-    def color_negative(val):
-        try:
-            val = float(val)
-            if val < 0:
-                return f"<span style='color:red;font-weight:600;'>{val:,.0f}</span>"
-            else:
-                return f"{val:,.0f}"
-        except Exception:
-            return val
-
     # data voorbereiden
     display_df = df.copy()
     display_df = add_quality_trend(display_df)  # eerst pijl-logica toepassen
     display_df = display_df.reindex(columns=[c for c in show_cols if c in display_df.columns]).reset_index(drop=True)
-    display_df["Effect aanpassing (visueel)"] = pd.to_numeric(display_df["Effect aanpassing"], errors="coerce" ).apply(fmt_effect)
     
-    # ---- Voeg visuele kolom toe voor rode waarden ----
-    def color_negative(val):
-        try:
-            val = float(val)
-            if val < 0:
-                return f"<span style='color:red;font-weight:600;'>{val:,.0f}</span>"
-            else:
-                return f"{val:,.0f}"
-        except Exception:
-            return val
-    
-    display_df["Effect aanpassing (visueel)"] = display_df["Effect aanpassing"].apply(color_negative)
+    # 🔹 Visuele kolom maken (emoji), let op: niet meer overschrijven met HTML
+    display_df["Effect aanpassing (visueel)"] = pd.to_numeric(
+        display_df["Effect aanpassing"], errors="coerce"
+    ).apply(fmt_effect)
     
     # tabel tonen
     edited = st.data_editor(
