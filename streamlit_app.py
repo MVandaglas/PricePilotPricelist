@@ -763,7 +763,7 @@ if selected == "Prijslijst":
         if pdf_bytes:
             st.download_button("⬇️ Download PDF", data=pdf_bytes, file_name=f"{export_name}.pdf", mime="application/pdf")
         else:
-            st.info("PDF-export vereist `reportlab` → `pip install reportlab`")
+            pass
 
     total_impact = pd.to_numeric(edited["Effect aanpassing"], errors="coerce").fillna(0).sum()
     impact_str = f"€ {total_impact:,.0f}".replace(",", ".")
@@ -801,164 +801,165 @@ if selected == "Prijslijst":
         </div>
         """
         html(card_pq, height=90)
-    
-    # ====== Kaarten rechts met artikelinformatie ======
-        
-    def _eur0(x):
-        x = pd.to_numeric(x, errors="coerce")
-        return f"€ {x:,.0f}".replace(",", ".") if pd.notna(x) else "—"
-    
-    def _pq_num_series(s: pd.Series) -> pd.Series:
-        # haalt numeriek deel uit bv. "🔻 94" of "108"
-        return pd.to_numeric(s.astype(str).str.extract(r'(\d+(?:\.\d+)?)')[0], errors="coerce")
-    
-    # Data voor de twee kaarten ophalen
-    targets = ["1006349", "1006351"]
-    sel_map = {}
-    for tid in targets:
-        df_one = edited[edited["Artikelnummer"].astype(str) == tid].copy()
-        if not df_one.empty:
-            df_one["NewPQ_num"] = _pq_num_series(df_one["New Prijskwaliteit"])
-            df_one["Effect_num"] = pd.to_numeric(df_one["Effect aanpassing"], errors="coerce")
-            sel_map[tid] = df_one.iloc[0]  # neem eerste match
-    
-    colA, colB = st.columns(2)
-    
-    # boven dit blok eenmalig zetten (of dichtbij laten staan)
-    FONT_STACK = ("system-ui, -apple-system, 'Segoe UI', Roboto, Oxygen, Ubuntu, "
-                  "Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', "
-                  "'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif")
 
-    def _eur2(x):
-        """Formateer als euro met twee decimalen (altijd 2 cijfers na de komma)."""
-        x = pd.to_numeric(x, errors="coerce")
-        return f"€ {x:,.2f}".replace(",", ".") if pd.notna(x) else "—"
+    with st.expander("📊 Overzicht prijsimpact + Top 3", expanded=False):
+        # ====== Kaarten rechts met artikelinformatie ======
+            
+        def _eur0(x):
+            x = pd.to_numeric(x, errors="coerce")
+            return f"€ {x:,.0f}".replace(",", ".") if pd.notna(x) else "—"
+        
+        def _pq_num_series(s: pd.Series) -> pd.Series:
+            # haalt numeriek deel uit bv. "🔻 94" of "108"
+            return pd.to_numeric(s.astype(str).str.extract(r'(\d+(?:\.\d+)?)')[0], errors="coerce")
+        
+        # Data voor de twee kaarten ophalen
+        targets = ["1006349", "1006351"]
+        sel_map = {}
+        for tid in targets:
+            df_one = edited[edited["Artikelnummer"].astype(str) == tid].copy()
+            if not df_one.empty:
+                df_one["NewPQ_num"] = _pq_num_series(df_one["New Prijskwaliteit"])
+                df_one["Effect_num"] = pd.to_numeric(df_one["Effect aanpassing"], errors="coerce")
+                sel_map[tid] = df_one.iloc[0]  # neem eerste match
+        
+        colA, colB = st.columns(2)
+        
+        # boven dit blok eenmalig zetten (of dichtbij laten staan)
+        FONT_STACK = ("system-ui, -apple-system, 'Segoe UI', Roboto, Oxygen, Ubuntu, "
+                      "Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', "
+                      "'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif")
     
-    # ---- Kaart links: 1006349 ----
-    with colA:
-        if "1006349" in sel_map:
-            r = sel_map["1006349"]
-            card_6349 = f"""
+        def _eur2(x):
+            """Formateer als euro met twee decimalen (altijd 2 cijfers na de komma)."""
+            x = pd.to_numeric(x, errors="coerce")
+            return f"€ {x:,.2f}".replace(",", ".") if pd.notna(x) else "—"
+        
+        # ---- Kaart links: 1006349 ----
+        with colA:
+            if "1006349" in sel_map:
+                r = sel_map["1006349"]
+                card_6349 = f"""
+                <div style="
+                    padding:24px;
+                    border:1px solid #e5e7eb;
+                    border-radius:12px;
+                    margin-bottom:12px;
+                    font-family:{FONT_STACK};
+                    line-height:1.4;
+                ">
+                  <div style="font-size:1rem;color:#6b7280;">Artikel 1006349</div>
+                  <div style="font-weight:700;margin-top:6px;font-size:1.15rem;">
+                    {r['Artikelnummer']} – {r['Artikelnaam']}
+                  </div>
+        
+                  <div style="margin-top:12px;font-size:1.05rem;">
+                    <div>Oude prijs: <b>{_eur2(r['Huidige m2 prijs'])}</b></div>
+                    <div>Nieuwe prijs: <b>{_eur2(r['Final prijs'])}</b></div>
+                    <div style="margin-top:6px;">Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
+                  </div>
+        
+                  <div style="margin-top:10px;font-size:1.05rem;">
+                    <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
+                  </div>
+                </div>
+                """
+                html(card_6349, height=260)
+            else:
+                st.info("Artikel 1006349 staat niet in de huidige selectie.")
+        
+        # ---- Kaart rechts: 1006351 ----
+        with colB:
+            if "1006351" in sel_map:
+                r = sel_map["1006351"]
+                card_6351 = f"""
+                <div style="
+                    padding:24px;
+                    border:1px solid #e5e7eb;
+                    border-radius:12px;
+                    margin-bottom:12px;
+                    font-family:{FONT_STACK};
+                    line-height:1.4;
+                ">
+                  <div style="font-size:1rem;color:#6b7280;">Artikel 1006351</div>
+                  <div style="font-weight:700;margin-top:6px;font-size:1.15rem;">
+                    {r['Artikelnummer']} – {r['Artikelnaam']}
+                  </div>
+        
+                  <div style="margin-top:12px;font-size:1.05rem;">
+                    <div>Oude prijs: <b>{_eur2(r['Huidige m2 prijs'])}</b></div>
+                    <div>Nieuwe prijs: <b>{_eur2(r['Final prijs'])}</b></div>
+                    <div style="margin-top:6px;">Effect aanpassing: <b>{_eur2(r['Effect_num'])}</b></div>
+                  </div>
+        
+                  <div style="margin-top:10px;font-size:1.05rem;">
+                    <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
+                  </div>
+                </div>
+                """
+                html(card_6351, height=260)
+            else:
+                st.info("Artikel 1006351 staat niet in de huidige selectie.")
+    
+            
+        # ---- Onder beide kolommen: Top 3 meest negatieve 'Effect aanpassing' (volle breedte) ----
+        tmp = edited.copy()
+        tmp["Effect_num"] = pd.to_numeric(tmp["Effect aanpassing"], errors="coerce")
+        lowest3 = tmp[tmp["Effect_num"] < 0].sort_values("Effect_num").head(3)
+        
+        FONT_STACK = ("system-ui, -apple-system, 'Segoe UI', Roboto, Oxygen, Ubuntu, "
+                      "Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', "
+                      "'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif")
+        
+        if not lowest3.empty:
+            rows = []
+            for _, r in lowest3.iterrows():
+                pq = _pq_num_series(pd.Series([r["New Prijskwaliteit"]])).iloc[0]
+                old_price = _eur2(r["Huidige m2 prijs"])
+                new_price = _eur2(r["Final prijs"])
+                rows.append(f"""
+                    <tr style="font-size:1rem;">
+                      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{r['Artikelnummer']}</td>
+                      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{r['Artikelnaam']}</td>
+                      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{old_price}</td>
+                      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{new_price}</td>
+                      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{pq:.0f}%</td>
+                      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{_eur2(r['Effect_num'])}</td>
+                    </tr>
+                """)
+        
+            html_top3 = f"""
             <div style="
-                padding:24px;
+                padding:20px;
                 border:1px solid #e5e7eb;
                 border-radius:12px;
-                margin-bottom:12px;
                 font-family:{FONT_STACK};
                 line-height:1.4;
+                margin-top:8px;
             ">
-              <div style="font-size:1rem;color:#6b7280;">Artikel 1006349</div>
-              <div style="font-weight:700;margin-top:6px;font-size:1.15rem;">
-                {r['Artikelnummer']} – {r['Artikelnaam']}
+              <div style="font-size:1.05rem;color:#6b7280;font-weight:600;margin-bottom:8px;">
+                Top 3 grootste negatieve effecten
               </div>
-    
-              <div style="margin-top:12px;font-size:1.05rem;">
-                <div>Oude prijs: <b>{_eur2(r['Huidige m2 prijs'])}</b></div>
-                <div>Nieuwe prijs: <b>{_eur2(r['Final prijs'])}</b></div>
-                <div style="margin-top:6px;">Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
-              </div>
-    
-              <div style="margin-top:10px;font-size:1.05rem;">
-                <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
-              </div>
+              <table style="width:100%; border-collapse:collapse; margin-top:4px;">
+                <thead style="font-size:1rem;">
+                  <tr style="border-bottom:1px solid #ddd;">
+                    <th style="text-align:left; padding:8px 12px;">Artikel</th>
+                    <th style="text-align:left; padding:8px 12px;">Naam</th>
+                    <th style="text-align:right; padding:8px 12px;">Oude prijs</th>
+                    <th style="text-align:right; padding:8px 12px;">Nieuwe prijs</th>
+                    <th style="text-align:right; padding:8px 12px;">New PQ</th>
+                    <th style="text-align:right; padding:8px 12px;">Effect</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {''.join(rows)}
+                </tbody>
+              </table>
             </div>
             """
-            html(card_6349, height=260)
+            html(html_top3, height=240 + 40 * len(rows))
         else:
-            st.info("Artikel 1006349 staat niet in de huidige selectie.")
-    
-    # ---- Kaart rechts: 1006351 ----
-    with colB:
-        if "1006351" in sel_map:
-            r = sel_map["1006351"]
-            card_6351 = f"""
-            <div style="
-                padding:24px;
-                border:1px solid #e5e7eb;
-                border-radius:12px;
-                margin-bottom:12px;
-                font-family:{FONT_STACK};
-                line-height:1.4;
-            ">
-              <div style="font-size:1rem;color:#6b7280;">Artikel 1006351</div>
-              <div style="font-weight:700;margin-top:6px;font-size:1.15rem;">
-                {r['Artikelnummer']} – {r['Artikelnaam']}
-              </div>
-    
-              <div style="margin-top:12px;font-size:1.05rem;">
-                <div>Oude prijs: <b>{_eur2(r['Huidige m2 prijs'])}</b></div>
-                <div>Nieuwe prijs: <b>{_eur2(r['Final prijs'])}</b></div>
-                <div style="margin-top:6px;">Effect aanpassing: <b>{_eur2(r['Effect_num'])}</b></div>
-              </div>
-    
-              <div style="margin-top:10px;font-size:1.05rem;">
-                <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
-              </div>
-            </div>
-            """
-            html(card_6351, height=260)
-        else:
-            st.info("Artikel 1006351 staat niet in de huidige selectie.")
-
-        
-    # ---- Onder beide kolommen: Top 3 meest negatieve 'Effect aanpassing' (volle breedte) ----
-    tmp = edited.copy()
-    tmp["Effect_num"] = pd.to_numeric(tmp["Effect aanpassing"], errors="coerce")
-    lowest3 = tmp[tmp["Effect_num"] < 0].sort_values("Effect_num").head(3)
-    
-    FONT_STACK = ("system-ui, -apple-system, 'Segoe UI', Roboto, Oxygen, Ubuntu, "
-                  "Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', "
-                  "'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif")
-    
-    if not lowest3.empty:
-        rows = []
-        for _, r in lowest3.iterrows():
-            pq = _pq_num_series(pd.Series([r["New Prijskwaliteit"]])).iloc[0]
-            old_price = _eur2(r["Huidige m2 prijs"])
-            new_price = _eur2(r["Final prijs"])
-            rows.append(f"""
-                <tr style="font-size:1rem;">
-                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{r['Artikelnummer']}</td>
-                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">{r['Artikelnaam']}</td>
-                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{old_price}</td>
-                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{new_price}</td>
-                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{pq:.0f}%</td>
-                  <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0; text-align:right;">{_eur2(r['Effect_num'])}</td>
-                </tr>
-            """)
-    
-        html_top3 = f"""
-        <div style="
-            padding:20px;
-            border:1px solid #e5e7eb;
-            border-radius:12px;
-            font-family:{FONT_STACK};
-            line-height:1.4;
-            margin-top:8px;
-        ">
-          <div style="font-size:1.05rem;color:#6b7280;font-weight:600;margin-bottom:8px;">
-            Top 3 grootste negatieve effecten
-          </div>
-          <table style="width:100%; border-collapse:collapse; margin-top:4px;">
-            <thead style="font-size:1rem;">
-              <tr style="border-bottom:1px solid #ddd;">
-                <th style="text-align:left; padding:8px 12px;">Artikel</th>
-                <th style="text-align:left; padding:8px 12px;">Naam</th>
-                <th style="text-align:right; padding:8px 12px;">Oude prijs</th>
-                <th style="text-align:right; padding:8px 12px;">Nieuwe prijs</th>
-                <th style="text-align:right; padding:8px 12px;">New PQ</th>
-                <th style="text-align:right; padding:8px 12px;">Effect</th>
-              </tr>
-            </thead>
-            <tbody>
-              {''.join(rows)}
-            </tbody>
-          </table>
-        </div>
-        """
-        html(html_top3, height=240 + 40 * len(rows))
-    else:
-        st.info("Geen negatieve effecten gevonden in de huidige selectie.")
+            st.info("Geen negatieve effecten gevonden in de huidige selectie.")
 # ---------------------------
 # Pagina: Beheer
 # ---------------------------
