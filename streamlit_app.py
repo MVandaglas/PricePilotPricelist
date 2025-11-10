@@ -828,6 +828,11 @@ if selected == "Prijslijst":
     FONT_STACK = ("system-ui, -apple-system, 'Segoe UI', Roboto, Oxygen, Ubuntu, "
                   "Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', "
                   "'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif")
+
+    def _eur2(x):
+        """Formateer als euro met twee decimalen (altijd 2 cijfers na de komma)."""
+        x = pd.to_numeric(x, errors="coerce")
+        return f"€ {x:,.2f}".replace(",", ".") if pd.notna(x) else "—"
     
     # ---- Kaart links: 1006349 ----
     with colA:
@@ -848,8 +853,8 @@ if selected == "Prijslijst":
               </div>
     
               <div style="margin-top:12px;font-size:1.05rem;">
-                <div>Oude prijs: <b>{_eur0(r['Huidige m2 prijs'])}</b></div>
-                <div>Nieuwe prijs: <b>{_eur0(r['Final prijs'])}</b></div>
+                <div>Oude prijs: <b>{_eur2(r['Huidige m2 prijs'])}</b></div>
+                <div>Nieuwe prijs: <b>{_eur2(r['Final prijs'])}</b></div>
                 <div style="margin-top:6px;">Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
               </div>
     
@@ -881,9 +886,9 @@ if selected == "Prijslijst":
               </div>
     
               <div style="margin-top:12px;font-size:1.05rem;">
-                <div>Oude prijs: <b>{_eur0(r['Huidige m2 prijs'])}</b></div>
-                <div>Nieuwe prijs: <b>{_eur0(r['Final prijs'])}</b></div>
-                <div style="margin-top:6px;">Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
+                <div>Oude prijs: <b>{_eur2(r['Huidige m2 prijs'])}</b></div>
+                <div>Nieuwe prijs: <b>{_eur2(r['Final prijs'])}</b></div>
+                <div style="margin-top:6px;">Effect aanpassing: <b>{_eur2(r['Effect_num'])}</b></div>
               </div>
     
               <div style="margin-top:10px;font-size:1.05rem;">
