@@ -769,7 +769,7 @@ if selected == "Prijslijst":
     impact_str = f"€ {total_impact:,.0f}".replace(",", ".")
     
     # Variant A: metric-look & feel met custom kleur
-    colA, _ = st.columns([1,1])
+    colA, _ = st.columns([1,3])
     with colA:
         color = "red" if total_impact < 0 else "black"
         st.markdown(
