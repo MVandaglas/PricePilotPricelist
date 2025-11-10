@@ -671,6 +671,21 @@ if selected == "Prijslijst":
         "Prijskwaliteit", "New Prijskwaliteit",
         "Omzet conditie", "Omzet totaal", "Effect aanpassing"
     ]
+
+    # Maak kopie voor weergave met kleur voor negatieve waarden
+    display_df = display_df.copy()
+    
+    def color_negative(val):
+        try:
+            val = float(val)
+            if val < 0:
+                return f"<span style='color:red;font-weight:600;'>{val:,.0f}</span>"
+            else:
+                return f"{val:,.0f}"
+        except Exception:
+            return val
+
+display_df["Effect aanpassing (visueel)"] = display_df["Effect aanpassing"].apply(color_negative)
     
     # data voorbereiden
     display_df = df.copy()
@@ -697,7 +712,7 @@ if selected == "Prijslijst":
     
             "Omzet conditie":      st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
             "Omzet totaal":        st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
-            "Effect aanpassing":   st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
+            "Effect aanpassing (visueel)": st.column_config.TextColumn(disabled=True),
         },
         key="prijs_editor",
         column_order=[c for c in show_cols if c in display_df.columns],
