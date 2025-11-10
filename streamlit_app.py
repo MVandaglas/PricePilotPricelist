@@ -174,7 +174,7 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
         
         # Effect aanpassing = Omzet conditie * (Handmatige prijs / Huidige m2 prijs) - Omzet conditie
         show_df["Effect aanpassing"] = (
-            show_df["Omzet conditie"] * pd.to_numeric(show_df["Handmatige prijs"], errors="coerce") / pd.to_numeric(show_df["Huidige m2 prijs"], errors="coerce")) - show_df["Omzet conditie"]).round(2)
+            show_df["Omzet conditie"] * pd.to_numeric(show_df["Handmatige prijs"], errors="coerce") / pd.to_numeric(show_df["Huidige m2 prijs"], errors="coerce")) - show_df["Omzet conditie"].round(2)
 
         x0, y0 = 1.2*cm, height - 3*cm
         line_h = 0.6*cm
