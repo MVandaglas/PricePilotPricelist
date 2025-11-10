@@ -672,6 +672,16 @@ if selected == "Prijslijst":
         "Omzet conditie", "Omzet totaal", "Effect aanpassing"
     ]
 
+    def fmt_effect(val):
+        try:
+            v = float(val)
+            return f"🔻 {v:,.0f}".replace(",", ".") if v < 0 else f"{v:,.0f}".replace(",", ".")
+        except Exception:
+            return val
+    
+    display_df["Effect aanpassing (visueel)"] = pd.to_numeric(
+        display_df["Effect aanpassing"], errors="coerce"
+    ).apply(fmt_effect)
     
     def color_negative(val):
         try:
