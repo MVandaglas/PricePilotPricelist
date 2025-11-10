@@ -808,7 +808,104 @@ if selected == "Prijslijst":
             unsafe_allow_html=True
         )
 
+
+    # ====== Kaarten rechts met artikelinformatie ======
     
+    # Helpers
+    def _eur0(x):
+        x = pd.to_numeric(x, errors="coerce")
+        return f"€ {x:,.0f}".replace(",", ".") if pd.notna(x) else "—"
+    
+    def _pq_num(s):
+        # '🔻 94' -> 94
+        s = (pd.Series([s]).astype(str)
+             .str.extract(r'([-+]?\d*\.?\d+)')[0])
+        return pd.to_numeric(s, errors="coerce").iloc[0]
+    
+    # Kolommen voor kaarten (links leeg laten, rechts vullen – zoals in je screenshot)
+    _, right = st.columns([1, 3])
+    
+    with right:
+        # ---------- Kaart 1: vaste artikelnummers ----------
+        target_ids = {"1006349", "1006351"}
+        sel = edited[edited["Artikelnummer"].astype(str).isin(target_ids)].copy()
+    
+        if not sel.empty:
+            # Zorg dat we nette numerieke kolommen hebben
+            sel["NewPQ_num"] = sel["New Prijskwaliteit"].apply(_pq_num)
+            sel["Effect_num"] = pd.to_numeric(sel["Effect aanpassing"], errors="coerce")
+    
+            parts = []
+            for _, r in sel.iterrows():
+                parts.append(
+                    f"""
+                    <div style="padding:8px 0;border-bottom:1px solid #eee;">
+                      <div style="font-weight:600;">{r['Artikelnummer']} – {r['Artikelnaam']}</div>
+                      <div style="display:flex;gap:16px;margin-top:4px;">
+                        <div>Oude prijs: <b>{_eur0(r['Huidige m2 prijs'])}</b></div>
+                        <div>Nieuwe prijs: <b>{_eur0(r['Final prijs'])}</b></div>
+                      </div>
+                      <div style="display:flex;gap:16px;margin-top:2px;">
+                        <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
+                        <div>Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
+                      </div>
+                    </div>
+                    """
+                )
+    
+            html_card = f"""
+            <div style="padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:12px;">
+              <div style="font-size:0.9rem;color:#6b7280;">Artikelen 1006349 & 1006351</div>
+              {''.join(parts)}
+            </div>
+            """
+            st.markdown(html_card, unsafe_allow_html=True)
+        else:
+            st.info("Artikelen 1006349 en 1006351 staan niet in de huidige selectie.")
+    
+        # ---------- Kaart 2: top 3 meest negatieve 'Effect aanpassing' ----------
+        tmp = edited.copy()
+        tmp["Effect_num"] = pd.to_numeric(tmp["Effect aanpassing"], errors="coerce")
+        lowest3 = tmp[tmp["Effect_num"] < 0].sort_values("Effect_num").head(3)
+    
+        if not lowest3.empty:
+            rows = []
+            for _, r in lowest3.iterrows():
+                pq = _pq_num(r["New Prijskwaliteit"])
+                rows.append(
+                    f"""
+                    <tr>
+                      <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;">{r['Artikelnummer']}</td>
+                      <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;">{r['Artikelnaam']}</td>
+                      <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0; text-align:right;">{pq:.0f}%</td>
+                      <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0; text-align:right;">{_eur0(r['Effect_num'])}</td>
+                    </tr>
+                    """
+                )
+    
+            html_top3 = f"""
+            <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
+              <div style="font-size:0.9rem;color:#6b7280;">Top 3 grootste negatieve effecten</div>
+              <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left; padding:6px 8px;">Artikel</th>
+                    <th style="text-align:left; padding:6px 8px;">Naam</th>
+                    <th style="text-align:right; padding:6px 8px;">New PQ</th>
+                    <th style="text-align:right; padding:6px 8px;">Effect</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {''.join(rows)}
+                </tbody>
+              </table>
+            </div>
+            """
+            st.markdown(html_top3, unsafe_allow_html=True)
+        else:
+            st.info("Geen negatieve effecten gevonden in de huidige selectie.")
+
+
     # (Als je per se st.metric wilt gebruiken, kan dat ook — maar dan kun je de waarde niet rood maken zonder delta-truc.)
 
 # ---------------------------
