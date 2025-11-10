@@ -612,11 +612,11 @@ if selected == "Prijslijst":
     # ---- Voeg omzet-kolommen toe vóór tonen in data_editor ----
     # Willekeurige omzet totaal tussen €0 en €2000
     # laatste cijfer van artikelnummer × mm × 10
-        show_df["Omzet totaal"] = (
-            show_df["Artikelnummer"].astype(str).str[-1].astype(float)
-            * pd.to_numeric(show_df["mm"], errors="coerce").fillna(0)
-            * 10
-        ).round(2)
+    show_df["Omzet totaal"] = (
+        show_df["Artikelnummer"].astype(str).str[-1].astype(float)
+        * pd.to_numeric(show_df["mm"], errors="coerce").fillna(0)
+        * 10
+    ).round(0)
 
     
     # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
