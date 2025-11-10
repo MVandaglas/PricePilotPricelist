@@ -840,25 +840,24 @@ if selected == "Prijslijst":
                 border-radius:12px;
                 margin-bottom:12px;
                 font-family:{FONT_STACK};
-                line-height:1.35;
+                line-height:1.4;
             ">
               <div style="font-size:1rem;color:#6b7280;">Artikel 1006349</div>
               <div style="font-weight:700;margin-top:6px;font-size:1.15rem;">
                 {r['Artikelnummer']} – {r['Artikelnaam']}
               </div>
     
-              <div style="display:flex;gap:24px;margin-top:10px;font-size:1.05rem;">
+              <div style="margin-top:12px;font-size:1.05rem;">
                 <div>Oude prijs: <b>{_eur0(r['Huidige m2 prijs'])}</b></div>
                 <div>Nieuwe prijs: <b>{_eur0(r['Final prijs'])}</b></div>
+                <div style="margin-top:6px;">Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
               </div>
     
-              <div style="display:flex;gap:24px;margin-top:8px;font-size:1.05rem;">
+              <div style="margin-top:10px;font-size:1.05rem;">
                 <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
-                <div>Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
               </div>
             </div>
             """
-            # ~dubbel zo hoog t.o.v. eerdere 150 → 260
             html(card_6349, height=260)
         else:
             st.info("Artikel 1006349 staat niet in de huidige selectie.")
@@ -874,27 +873,28 @@ if selected == "Prijslijst":
                 border-radius:12px;
                 margin-bottom:12px;
                 font-family:{FONT_STACK};
-                line-height:1.35;
+                line-height:1.4;
             ">
               <div style="font-size:1rem;color:#6b7280;">Artikel 1006351</div>
               <div style="font-weight:700;margin-top:6px;font-size:1.15rem;">
                 {r['Artikelnummer']} – {r['Artikelnaam']}
               </div>
     
-              <div style="display:flex;gap:24px;margin-top:10px;font-size:1.05rem;">
+              <div style="margin-top:12px;font-size:1.05rem;">
                 <div>Oude prijs: <b>{_eur0(r['Huidige m2 prijs'])}</b></div>
                 <div>Nieuwe prijs: <b>{_eur0(r['Final prijs'])}</b></div>
+                <div style="margin-top:6px;">Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
               </div>
     
-              <div style="display:flex;gap:24px;margin-top:8px;font-size:1.05rem;">
+              <div style="margin-top:10px;font-size:1.05rem;">
                 <div>New PQ: <b>{r['NewPQ_num']:.0f}%</b></div>
-                <div>Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
               </div>
             </div>
             """
             html(card_6351, height=260)
         else:
             st.info("Artikel 1006351 staat niet in de huidige selectie.")
+
         
     # ---- Onder beide kolommen: Top 3 meest negatieve 'Effect aanpassing' (volle breedte) ----
     tmp = edited.copy()
