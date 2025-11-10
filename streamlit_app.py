@@ -5,6 +5,7 @@ from streamlit_option_menu import option_menu
 import numpy as np
 from functools import partial
 from datetime import datetime, timedelta, date
+from streamlit.components.v1 import html
 
 # ---------------------------
 # Config
@@ -729,7 +730,6 @@ if selected == "Prijslijst":
     )
 
     # Herberekenen op basis van editor
-    # Herberekenen op basis van editor
     edited["Handmatige prijs"] = pd.to_numeric(edited["Handmatige prijs"], errors="coerce")
     
     if rsp_build_up:
@@ -785,12 +785,10 @@ if selected == "Prijslijst":
     oc_num = pd.to_numeric(edited["Omzet conditie"], errors="coerce").fillna(0)
     
     # 'New Prijskwaliteit' kan '🔻 94' of '🟢 102' zijn -> numeriek deel extraheren
-    newpq_num = (
-        edited["New Prijskwaliteit"]
-        .astype(str)
-        .str.extract(r'([-+]?\d*\.?\d+)')[0]  # pak de numerieke waarde uit de string
+    newpq_num = pd.to_numeric(
+        edited["New Prijskwaliteit"].astype(str).str.extract(r'(\d+(?:\.\d+)?)')[0],
+        errors="coerce"
     )
-    newpq_num = pd.to_numeric(newpq_num, errors="coerce")
     
     den = oc_num.sum()
     pq_prijslijst = (oc_num * newpq_num).sum() / den if den > 0 else np.nan
@@ -798,31 +796,23 @@ if selected == "Prijslijst":
     
     colB, _ = st.columns([1,3])
     with colB:
-        st.markdown(
-            f"""
-            <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
-              <div style="font-size:0.9rem;color:#6b7280;">Prijskwaliteit Prijslijst</div>
-              <div style="font-size:1.6rem;font-weight:700;color:#111827;margin-top:4px;">{pq_label}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
+        card_pq = f"""
+        <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
+          <div style="font-size:0.9rem;color:#6b7280;">Prijskwaliteit Prijslijst</div>
+          <div style="font-size:1.6rem;font-weight:700;color:#111827;margin-top:4px;">{pq_label}</div>
+        </div>
+        """
+        html(card_pq, height=90)
+    
     # ====== Kaarten rechts met artikelinformatie ======
     
-    # Helpers
     def _eur0(x):
         x = pd.to_numeric(x, errors="coerce")
         return f"€ {x:,.0f}".replace(",", ".") if pd.notna(x) else "—"
     
-    def _pq_num(s):
-        # '🔻 94' -> 94
-        s = (pd.Series([s]).astype(str)
-             .str.extract(r'([-+]?\d*\.?\d+)')[0])
-        return pd.to_numeric(s, errors="coerce").iloc[0]
+    def _pq_num_series(s: pd.Series) -> pd.Series:
+        return pd.to_numeric(s.astype(str).str.extract(r'(\d+(?:\.\d+)?)')[0], errors="coerce")
     
-    # Kolommen voor kaarten (links leeg laten, rechts vullen – zoals in je screenshot)
     _, right = st.columns([1, 3])
     
     with right:
@@ -831,14 +821,12 @@ if selected == "Prijslijst":
         sel = edited[edited["Artikelnummer"].astype(str).isin(target_ids)].copy()
     
         if not sel.empty:
-            # Zorg dat we nette numerieke kolommen hebben
-            sel["NewPQ_num"] = sel["New Prijskwaliteit"].apply(_pq_num)
+            sel["NewPQ_num"] = _pq_num_series(sel["New Prijskwaliteit"])
             sel["Effect_num"] = pd.to_numeric(sel["Effect aanpassing"], errors="coerce")
     
             parts = []
             for _, r in sel.iterrows():
-                parts.append(
-                    f"""
+                parts.append(f"""
                     <div style="padding:8px 0;border-bottom:1px solid #eee;">
                       <div style="font-weight:600;">{r['Artikelnummer']} – {r['Artikelnaam']}</div>
                       <div style="display:flex;gap:16px;margin-top:4px;">
@@ -850,8 +838,7 @@ if selected == "Prijslijst":
                         <div>Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
                       </div>
                     </div>
-                    """
-                )
+                """)
     
             html_card = f"""
             <div style="padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:12px;">
@@ -859,7 +846,7 @@ if selected == "Prijslijst":
               {''.join(parts)}
             </div>
             """
-            st.markdown(html_card, unsafe_allow_html=True)
+            html(html_card, height=180 + 80*len(parts))
         else:
             st.info("Artikelen 1006349 en 1006351 staan niet in de huidige selectie.")
     
@@ -871,17 +858,15 @@ if selected == "Prijslijst":
         if not lowest3.empty:
             rows = []
             for _, r in lowest3.iterrows():
-                pq = _pq_num(r["New Prijskwaliteit"])
-                rows.append(
-                    f"""
+                pq = _pq_num_series(pd.Series([r["New Prijskwaliteit"]])).iloc[0]
+                rows.append(f"""
                     <tr>
                       <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;">{r['Artikelnummer']}</td>
                       <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;">{r['Artikelnaam']}</td>
                       <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0; text-align:right;">{pq:.0f}%</td>
                       <td style="padding:6px 8px;border-bottom:1px solid #f0f0f0; text-align:right;">{_eur0(r['Effect_num'])}</td>
                     </tr>
-                    """
-                )
+                """)
     
             html_top3 = f"""
             <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
@@ -901,7 +886,7 @@ if selected == "Prijslijst":
               </table>
             </div>
             """
-            st.markdown(html_top3, unsafe_allow_html=True)
+            html(html_top3, height=180 + 36*len(rows))
         else:
             st.info("Geen negatieve effecten gevonden in de huidige selectie.")
 
