@@ -725,31 +725,6 @@ if selected == "Prijslijst":
 
     st.caption(f"Regels: {len(edited)}")
 
-    oc_num = pd.to_numeric(edited["Omzet conditie"], errors="coerce").fillna(0)
-    
-    # 'New Prijskwaliteit' kan '🔻 94' of '🟢 102' zijn -> numeriek deel extraheren
-    newpq_num = (
-        edited["New Prijskwaliteit"]
-        .astype(str)
-        .str.extract(r'([-+]?\d*\.?\d+)')[0]  # pak de numerieke waarde uit de string
-    )
-    newpq_num = pd.to_numeric(newpq_num, errors="coerce")
-    
-    den = oc_num.sum()
-    pq_prijslijst = (oc_num * newpq_num).sum() / den if den > 0 else np.nan
-    pq_label = f"{pq_prijslijst:.0f}%" if pd.notna(pq_prijslijst) else "—"
-    
-    colB, _ = st.columns([1,1])
-    with colB:
-        st.markdown(
-            f"""
-            <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
-              <div style="font-size:0.9rem;color:#6b7280;">Prijskwaliteit Prijslijst</div>
-              <div style="font-size:1.6rem;font-weight:700;color:#111827;margin-top:4px;">{pq_label}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
     c1, c2 = st.columns(2)
     with c1:
@@ -778,6 +753,33 @@ if selected == "Prijslijst":
             """,
             unsafe_allow_html=True
         )
+
+    oc_num = pd.to_numeric(edited["Omzet conditie"], errors="coerce").fillna(0)
+    
+    # 'New Prijskwaliteit' kan '🔻 94' of '🟢 102' zijn -> numeriek deel extraheren
+    newpq_num = (
+        edited["New Prijskwaliteit"]
+        .astype(str)
+        .str.extract(r'([-+]?\d*\.?\d+)')[0]  # pak de numerieke waarde uit de string
+    )
+    newpq_num = pd.to_numeric(newpq_num, errors="coerce")
+    
+    den = oc_num.sum()
+    pq_prijslijst = (oc_num * newpq_num).sum() / den if den > 0 else np.nan
+    pq_label = f"{pq_prijslijst:.0f}%" if pd.notna(pq_prijslijst) else "—"
+    
+    colB, _ = st.columns([1,1])
+    with colB:
+        st.markdown(
+            f"""
+            <div style="padding:12px;border:1px solid #eee;border-radius:8px;">
+              <div style="font-size:0.9rem;color:#6b7280;">Prijskwaliteit Prijslijst</div>
+              <div style="font-size:1.6rem;font-weight:700;color:#111827;margin-top:4px;">{pq_label}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
     
     # (Als je per se st.metric wilt gebruiken, kan dat ook — maar dan kun je de waarde niet rood maken zonder delta-truc.)
 
