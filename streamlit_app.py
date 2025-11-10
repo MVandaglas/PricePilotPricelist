@@ -615,6 +615,7 @@ if selected == "Prijslijst":
     ]
     display_df = df.reindex(columns=show_cols).copy()
 
+    display_df = display_df.reset_index(drop=True)
     edited = st.data_editor(
         display_df,
         use_container_width=True,
@@ -627,7 +628,7 @@ if selected == "Prijslijst":
             "Huidige m2 prijs": st.column_config.NumberColumn(width="small",disabled=True, format="€ %.2f",),
             "RSP": st.column_config.NumberColumn(width="small",disabled=True, format="€ %.2f",),
             "Handmatige prijs": st.column_config.NumberColumn(width="small",help="Laat leeg om RSP te gebruiken", format="€ %.2f",),
-            "Final prijs": st.column_config.NumberColumn(width="small",disabled=True,format="€ %.2f",),
+            "Final prijs": st.column_config.NumberColumn(width=60,disabled=True,format="€ %.2f",),
             "Prijskwaliteit": st.column_config.TextColumn(width="small",disabled=True),
             "New Prijskwaliteit": st.column_config.TextColumn(width="small",disabled=True),
             "Omzet conditie": st.column_config.NumberColumn(disabled=True),
