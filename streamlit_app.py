@@ -174,7 +174,7 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
         ).round(0)
         
         # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
-        show_df["Omzet conditie"] = (show_df["Omzet totaal"] * 0.4
+        show_df["Omzet conditie"] = show_df["Omzet totaal"] * 0.4
 
 
         hp = pd.to_numeric(show_df["Handmatige prijs"], errors="coerce")
