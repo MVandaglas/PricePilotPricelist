@@ -604,53 +604,71 @@ if selected == "Prijslijst":
     df["New Prijskwaliteit"] = np.round(new_ratio_pct)
 
     
+    # helper: voeg visuele trend toe aan "New Prijskwaliteit"
     def add_quality_trend(df):
-    df = df.copy()
-    def trend(row):
-        old = row.get("Prijskwaliteit", np.nan)
-        new = row.get("New Prijskwaliteit", np.nan)
-        if pd.notna(old) and pd.notna(new):
-            if new < 100 and new < old:
-                return f"🔻 {new}"   # rode pijl omlaag
-            elif new > old:
-                return f"🟢 {new}"   # groene pijl omhoog
-        return f"{new}"  # geen symbool
-    df["New Prijskwaliteit"] = df.apply(trend, axis=1)
-    return df
-
-    display_df = add_quality_trend(display_df)
-
-
-    # Tabel tonen (selectief editable)
+        df = df.copy()
+    
+        def trend(row):
+            old = row.get("Prijskwaliteit")
+            new = row.get("New Prijskwaliteit")
+            # veilig casten naar float
+            try:
+                old_val = float(old) if pd.notna(old) else None
+                new_val = float(new) if pd.notna(new) else None
+            except Exception:
+                return f"{new}"
+    
+            if old_val is not None and new_val is not None:
+                if new_val < 100 and new_val < old_val:
+                    return f"🔻 {new_val:g}"   # rode pijl omlaag
+                elif new_val > old_val:
+                    return f"🟢 {new_val:g}"   # groene pijl omhoog
+                else:
+                    return f"{new_val:g}"
+            return f"{new}"
+    
+        df["New Prijskwaliteit"] = df.apply(trend, axis=1)
+        return df
+    
+    
+    # kolommen & volgorde
     show_cols = [
-        "Artikelnummer","Artikelnaam","Productgroep","mm",
-        "Huidige m2 prijs","RSP","Handmatige prijs","Final prijs",
-        "Prijskwaliteit","New Prijskwaliteit","Omzet conditie","Omzet totaal","Effect aanpassing"
+        "Productgroep", "Artikelnummer", "Artikelnaam", "mm",
+        "Huidige m2 prijs", "RSP", "Handmatige prijs", "Final prijs",
+        "Prijskwaliteit", "New Prijskwaliteit",
+        "Omzet conditie", "Omzet totaal", "Effect aanpassing"
     ]
-    display_df = df.reindex(columns=show_cols).copy()
-
-    display_df = display_df.reset_index(drop=True)
+    
+    # data voorbereiden
+    display_df = df.copy()
+    display_df = add_quality_trend(display_df)  # eerst pijl-logica toepassen
+    display_df = display_df.reindex(columns=[c for c in show_cols if c in display_df.columns]).reset_index(drop=True)
+    
+    # tabel tonen
     edited = st.data_editor(
         display_df,
         use_container_width=True,
         num_rows="dynamic",
         column_config={
-            "Artikelnummer": st.column_config.TextColumn(disabled=True),
-            "Artikelnaam": st.column_config.TextColumn(disabled=True),
-            "Productgroep": st.column_config.TextColumn(disabled=True),
-            "mm": st.column_config.NumberColumn(disabled=True),
-            "Huidige m2 prijs": st.column_config.NumberColumn(width=20,disabled=True, format="€ %.2f",),
-            "RSP": st.column_config.NumberColumn(width=20,disabled=True, format="€ %.2f",),
-            "Handmatige prijs": st.column_config.NumberColumn(width=20,help="Laat leeg om RSP te gebruiken", format="€ %.2f",),
-            "Final prijs": st.column_config.NumberColumn(width=20,disabled=True,format="€ %.2f",),
-            "Prijskwaliteit": st.column_config.TextColumn(label="📈 PQ", width=60, disabled=True),
-            "New Prijskwaliteit": st.column_config.TextColumn(label="🆕 PQ", width=80, disabled=True),
-            "Omzet conditie": st.column_config.NumberColumn(disabled=True),
-            "Omzet totaal": st.column_config.NumberColumn(disabled=True),
-            "Effect aanpassing": st.column_config.NumberColumn(disabled=True),
+            "Artikelnummer":       st.column_config.TextColumn(disabled=True),
+            "Artikelnaam":         st.column_config.TextColumn(disabled=True),
+            "Productgroep":        st.column_config.TextColumn(disabled=True),
+            "mm":                  st.column_config.NumberColumn(disabled=True),
+    
+            "Huidige m2 prijs":    st.column_config.NumberColumn(width=80, disabled=True, format="€ %.2f"),
+            "RSP":                 st.column_config.NumberColumn(width=80, disabled=True, format="€ %.2f"),
+            "Handmatige prijs":    st.column_config.NumberColumn(width=80, help="Laat leeg om RSP te gebruiken", format="€ %.2f"),
+            "Final prijs":         st.column_config.NumberColumn(width=80, disabled=True, format="€ %.2f"),
+    
+            "Prijskwaliteit":      st.column_config.TextColumn(label="📈 PQ", width=60, disabled=True),
+            "New Prijskwaliteit":  st.column_config.TextColumn(label="🆕 PQ", width=80, disabled=True),
+    
+            "Omzet conditie":      st.column_config.NumberColumn(disabled=True),
+            "Omzet totaal":        st.column_config.NumberColumn(disabled=True),
+            "Effect aanpassing":   st.column_config.NumberColumn(disabled=True),
         },
         key="prijs_editor",
-        column_order=[c for c in df.columns if c != "mm"],
+        column_order=[c for c in show_cols if c in display_df.columns],
     )
 
     # Herberekenen op basis van editor
