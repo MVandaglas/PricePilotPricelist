@@ -690,9 +690,7 @@ if selected == "Prijslijst":
         except Exception:
             return val
 
-    display_df["Effect aanpassing (visueel)"] = pd.to_numeric(
-        display_df["Effect aanpassing"], errors="coerce"
-    ).apply(fmt_effect)
+
     
     # data voorbereiden
     display_df = df.copy()
