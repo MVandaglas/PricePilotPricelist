@@ -469,9 +469,11 @@ def to_sml(mm: Optional[int]) -> Optional[str]:
     if mm is None:
         return None
     if mm <= 6:
-        return "S"
+        return "L"
     elif 7 <= mm <= 10:
-        return "M"
+        return "S"
+    elif mm > 10:
+        return "M"    
     return "L"
 
 
@@ -487,4 +489,5 @@ articles = augmented_articles  # overschrijf originele lijst
 
 # optioneel: DataFrame beschikbaar stellen (geen file output!)
 df = pd.DataFrame(articles)
+
 
