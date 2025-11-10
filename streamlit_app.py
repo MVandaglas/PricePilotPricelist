@@ -465,8 +465,8 @@ with st.sidebar:
             help="Final price = RSP × dit percentage"
         )
         
-        st.markdown("---")
-        export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
+    st.markdown("---")
+    export_name = st.text_input("Bestandsnaam export (zonder extensie)", value="prijslijst")
 
 # ============================================================
 # HANDMATIGE PRIJS / FINAL PRIJS – OPSCHOONDE EN JUISTE VERSIE
