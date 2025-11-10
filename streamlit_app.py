@@ -710,7 +710,7 @@ if selected == "Prijslijst":
     
             "Omzet conditie":      st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
             "Omzet totaal":        st.column_config.NumberColumn(disabled=True, format="€ %.0f"),
-            "Effect aanpassing (visueel)": st.column_config.TextColumn(label="Effect aanpassing", disabled=True),
+            "Effect aanpassing (visueel)": st.column_config.TextColumn(label="Effect aanpassing", disabled=True, format="€ %.0f"),
         },
         key="prijs_editor",
         column_order=[c for c in show_cols if c in display_df.columns] + ["Effect aanpassing (visueel)"],
