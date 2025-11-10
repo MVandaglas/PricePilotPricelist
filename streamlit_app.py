@@ -474,8 +474,8 @@ with st.sidebar:
         )
 
 
-# ← voeg toe, direct onder rsp_pct:
-gelaagd_component = st.session_state.get("gelaagd_component", 20.0)
+    # ← voeg toe, direct onder rsp_pct:
+    gelaagd_component = st.session_state.get("gelaagd_component", 20.0)
         
     st.markdown("---")
     datum = datetime.now().strftime("%Y-%m-%d")
