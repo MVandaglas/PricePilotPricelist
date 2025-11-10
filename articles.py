@@ -461,6 +461,10 @@ def extract_mm(desc: str) -> Optional[int]:
             mm_total += allowed[token]
             found = True
 
+    # ✅ Extra logica: als mm < 8, dan +4
+    if found and mm_total < 8:
+        mm_total += 4
+
     return mm_total if found else None
 
 
@@ -489,5 +493,6 @@ articles = augmented_articles  # overschrijf originele lijst
 
 # optioneel: DataFrame beschikbaar stellen (geen file output!)
 df = pd.DataFrame(articles)
+
 
 
