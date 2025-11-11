@@ -619,7 +619,7 @@ if selected == "Prijslijst":
     df["Omzet totaal"] = (
         df["Artikelnummer"].astype(str).str[-1].astype(float)
         * pd.to_numeric(df["mm"], errors="coerce").fillna(0)
-        * 10
+        * 100
     ).round(0)
 
     
