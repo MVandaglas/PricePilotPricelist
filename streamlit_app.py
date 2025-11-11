@@ -1051,14 +1051,7 @@ if selected == "Prijslijst":
     # UI: link om mail te openen + handige export
     col_m1, col_m2 = st.columns([1,1])
     with col_m1:
-        st.markdown(f"[📧 Open e-mailconcept]({mailto_url})")
-    with col_m2:
-        st.download_button(
-            "⬇️ Download e-mailtekst (.txt)",
-            data=mail_body.encode("utf-8"),
-            file_name=f"accordering_{klantnaam_str}.txt",
-            mime="text/plain"
-        )
+        st.link_button("Verstuur accordeer e-mail", mailto_url)
     
     # Optioneel: toon de tekst ter controle/knip-plak
     st.text_area("Voorbeeld e-mailtekst", value=mail_body, height=280)
