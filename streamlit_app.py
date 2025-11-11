@@ -891,7 +891,7 @@ if selected == "Prijslijst":
                   <div style="margin-top:12px;font-size:1.05rem;">
                     <div>Oude prijs: <b>{_eur2(r['Huidige m2 prijs'])}</b></div>
                     <div>Nieuwe prijs: <b>{_eur2(r['Final prijs'])}</b></div>
-                    <div style="margin-top:6px;">Effect aanpassing: <b>{_eur2(r['Effect_num'])}</b></div>
+                    <div style="margin-top:6px;">Effect aanpassing: <b>{_eur0(r['Effect_num'])}</b></div>
                   </div>
         
                   <div style="margin-top:10px;font-size:1.05rem;">
