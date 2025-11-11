@@ -6,6 +6,7 @@ import numpy as np
 from functools import partial
 from datetime import datetime, timedelta, date
 from streamlit.components.v1 import html
+from urllib.parse import quote 
 
 # ---------------------------
 # Config
@@ -962,6 +963,89 @@ if selected == "Prijslijst":
             html(html_top3, height=240 + 40 * len(rows))
         else:
             st.info("Geen negatieve effecten gevonden in de huidige selectie.")
+
+    # === Accordeer-mail genereren ===
+    st.markdown("---")
+    st.subheader("📧 Accordering e-mail")
+    
+    # Invoer voor aanhef en ondertekening
+    leidinggevende_naam  = st.text_input("Naam leidinggevende (voor aanhef)", value="")
+    leidinggevende_email = st.text_input("E-mail leidinggevende", value="")
+    sales_rep_name       = st.text_input("Ondertekening (Sales rep)", value="")
+    
+    # Klantnaam afleiden uit dropdown ("<Klantnummer> - <Klantnaam>")
+    klantnaam_str = gekozen_info.split(" - ", 1)[1] if " - " in gekozen_info else str(klant)
+    
+    # Veilige helpers (hergebruiken van je eigen euro-formatters)
+    def _safe_first(series):
+        return series.iloc[0] if not series.empty else np.nan
+    
+    def _eur0(x):
+        x = pd.to_numeric(x, errors="coerce")
+        return f"€ {x:,.0f}".replace(",", ".") if pd.notna(x) else "—"
+    
+    def _eur2(x):
+        x = pd.to_numeric(x, errors="coerce")
+        return f"€ {x:,.2f}".replace(",", ".") if pd.notna(x) else "—"
+    
+    # Oude/nieuwe prijzen voor de twee voorbeeldartikelen
+    old_6349 = _safe_first(edited.loc[edited["Artikelnummer"].astype(str) == "1006349", "Huidige m2 prijs"])
+    new_6349 = _safe_first(edited.loc[edited["Artikelnummer"].astype(str) == "1006349", "Final prijs"])
+    old_6351 = _safe_first(edited.loc[edited["Artikelnummer"].astype(str) == "1006351", "Huidige m2 prijs"])
+    new_6351 = _safe_first(edited.loc[edited["Artikelnummer"].astype(str) == "1006351", "Final prijs"])
+    
+    # Top-3 regels als tekst voor in de mail (meest negatieve impact)
+    if 'Effect_num' not in edited.columns:
+        edited["Effect_num"] = pd.to_numeric(edited["Effect aanpassing"], errors="coerce")
+    
+    lowest3_mail = edited[edited["Effect_num"] < 0].sort_values("Effect_num").head(3)
+    top3_lines = []
+    for _, r in lowest3_mail.iterrows():
+        top3_lines.append(
+            f"- {r['Artikelnummer']} | {r['Artikelnaam']} | "
+            f"{_eur2(r['Huidige m2 prijs'])} → {_eur2(r['Final prijs'])} | "
+            f"{_eur0(r['Effect_num'])}"
+        )
+    top3_block = "\n".join(top3_lines) if top3_lines else "- (geen negatieve impact gevonden)"
+    
+    # Waarden uit je bestaande berekeningen
+    impact_mail = _eur0(total_impact)                   # totale marge-impact
+    pq_label_mail = pq_label                             # “Prijskwaliteit Prijslijst”
+    
+    # Mailtekst samenstellen
+    mail_body = f"""Beste {leidinggevende_naam},
+    
+    Bij deze heb ik een aanpassing van de prijslijst voor {klantnaam_str}. Hieronder vind je de samenvatting van de aanpassing.
+    
+    De prijsaanpassing heeft {impact_mail} impact op de marge.
+    De prijslijst heeft een prijskwaliteit van {pq_label_mail}.
+    Een 5 - #4 Alfa gaat van {_eur2(old_6349)} naar {_eur2(new_6349)}.
+    Een 33.1 - #33.1 Alfa gaat van {_eur2(old_6351)} naar {_eur2(new_6351)}.
+    
+    De top drie met impact zijn:
+    {top3_block}
+    
+    Met vriendelijke groet,
+    {sales_rep_name}
+    """
+    
+    mail_subject = f"Accordering prijslijst {klantnaam_str}"
+    mailto_url = f"mailto:{leidinggevende_email}?subject={quote(mail_subject)}&body={quote(mail_body)}"
+    
+    # UI: link om mail te openen + handige export
+    col_m1, col_m2 = st.columns([1,1])
+    with col_m1:
+        st.markdown(f"[📧 Open e-mailconcept]({mailto_url})")
+    with col_m2:
+        st.download_button(
+            "⬇️ Download e-mailtekst (.txt)",
+            data=mail_body.encode("utf-8"),
+            file_name=f"accordering_{klantnaam_str}.txt",
+            mime="text/plain"
+        )
+    
+    # Optioneel: toon de tekst ter controle/knip-plak
+    st.text_area("Voorbeeld e-mailtekst", value=mail_body, height=280)
 # ---------------------------
 # Pagina: Beheer
 # ---------------------------
