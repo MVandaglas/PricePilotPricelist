@@ -969,10 +969,12 @@ if selected == "Prijslijst":
     st.subheader("📧 Accordering e-mail")
     
     # Invoer voor aanhef en ondertekening
-    leidinggevende_naam  = st.text_input("Naam leidinggevende (voor aanhef)", value="")
-    leidinggevende_email = st.text_input("E-mail leidinggevende", value="")
-    sales_rep_name       = st.text_input("Ondertekening (Sales rep)", value="")
-    
+    with st.expander(
+        leidinggevende_naam  = st.text_input("Naam leidinggevende (voor aanhef)", value="")
+        leidinggevende_email = st.text_input("E-mail leidinggevende", value="")
+        sales_rep_name       = st.text_input("Ondertekening (Sales rep)", value="")
+        )
+
     # Klantnaam afleiden uit dropdown ("<Klantnummer> - <Klantnaam>")
     klantnaam_str = gekozen_info.split(" - ", 1)[1] if " - " in gekozen_info else str(klant)
     
