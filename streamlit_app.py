@@ -171,7 +171,7 @@ def df_to_simple_pdf(df: pd.DataFrame, title: str = "Prijslijst") -> bytes:
         show_df["Omzet totaal"] = (
             show_df["Artikelnummer"].astype(str).str[-1].astype(float)
             * pd.to_numeric(show_df["mm"], errors="coerce").fillna(0)
-            * 10
+            * 100
         ).round(0)
         
         # Willekeurige omzet conditie tussen 0% en 100% van omzet totaal
