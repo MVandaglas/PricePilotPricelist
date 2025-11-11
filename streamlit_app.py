@@ -968,12 +968,10 @@ if selected == "Prijslijst":
     st.markdown("---")
     st.subheader("📧 Accordering e-mail")
     
-    # Invoer voor aanhef en ondertekening
-    with st.expander(
+    with st.expander("Aanhef en ondertekening"):
         leidinggevende_naam  = st.text_input("Naam leidinggevende (voor aanhef)", value="")
         leidinggevende_email = st.text_input("E-mail leidinggevende", value="")
         sales_rep_name       = st.text_input("Ondertekening (Sales rep)", value="")
-        )
 
     # Klantnaam afleiden uit dropdown ("<Klantnummer> - <Klantnaam>")
     klantnaam_str = gekozen_info.split(" - ", 1)[1] if " - " in gekozen_info else str(klant)
@@ -1055,8 +1053,6 @@ if selected == "Prijslijst":
     with col_m1:
         st.link_button("Verstuur accordeer e-mail", mailto_url)
     
-    # Optioneel: toon de tekst ter controle/knip-plak
-    st.text_area("Voorbeeld e-mailtekst", value=mail_body, height=280)
 # ---------------------------
 # Pagina: Beheer
 # ---------------------------
