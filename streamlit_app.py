@@ -670,7 +670,7 @@ if selected == "Prijslijst":
         "Productgroep", "Artikelnummer", "Artikelnaam",
         "Huidige m2 prijs", "RSP", "Handmatige prijs", "Final prijs",
         "Prijskwaliteit", "New Prijskwaliteit",
-        "Omzet conditie", "Omzet totaal"
+        "Omzet conditie", "Omzet totaal", "Effect aanpassing"
     ]
     
     # 🔹 Alleen emoji/tekst formatter (géén HTML)
