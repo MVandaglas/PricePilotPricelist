@@ -1007,6 +1007,21 @@ if selected == "Prijslijst":
             f"{_eur0(r['Effect_num'])}"
         )
     top3_block = "\n".join(top3_lines) if top3_lines else "- (geen negatieve impact gevonden)"
+
+    # Omzet & klantgrootte voor in de mail
+    if not accounts_df.empty:
+        _sel = accounts_df.loc[accounts_df["Klantnummer"].astype(str) == str(klant)]
+        if not _sel.empty:
+            omzet_val = _sel["Omzet klant (€)"].iloc[0]
+            klantgrootte_mail = _sel["Klantgrootte"].iloc[0]
+        else:
+            omzet_val = bepaal_omzet(str(klant))
+            klantgrootte_mail = bepaal_klantgrootte(omzet_val)
+    else:
+        omzet_val = bepaal_omzet(str(klant))
+        klantgrootte_mail = bepaal_klantgrootte(omzet_val)
+    
+    omzet_str = _eur0(omzet_val)  # “€ 700.000”
     
     # Waarden uit je bestaande berekeningen
     impact_mail = _eur0(total_impact)                   # totale marge-impact
@@ -1018,6 +1033,7 @@ if selected == "Prijslijst":
     Bij deze heb ik een aanpassing van de prijslijst voor {klantnaam_str}. Hieronder vind je de samenvatting van de aanpassing.
     
     De prijsaanpassing heeft {impact_mail} impact op de marge.
+    Deze klant heeft de laatste 12 maanden {omzet_str} gedaan, is daarmee een {klantgrootte_mail}-klant en heeft een marge% van 28.2%.
     De prijslijst heeft een prijskwaliteit van {pq_label_mail}.
     Een 5 - #4 Alfa gaat van {_eur2(old_6349)} naar {_eur2(new_6349)}.
     Een 33.1 - #33.1 Alfa gaat van {_eur2(old_6351)} naar {_eur2(new_6351)}.
